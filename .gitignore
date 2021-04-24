@@ -1,3 +1,12 @@
 .calva/
+.clj-kondo/.cache/
 .cpcache/
 .lsp/
+.nrepl-port
+
+.shadow-cljs/
+build/
+node_modules/
+resources/public/js/
+package.json
+package-lock.json

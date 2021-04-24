@@ -1,4 +1,14 @@
-{:paths ["src"]
+{:paths ["src" "resources"]
+ 
+ :deps
+ {mount/mount {:mvn/version "0.1.16"}
+  http-kit/http-kit {:mvn/version "2.5.3"}
+  ring/ring-core {:mvn/version "1.9.2"}
+  ring/ring-defaults {:mvn/version "0.3.2"}
+  metosin/reitit-ring {:mvn/version "0.5.13"}
+  hiccup/hiccup {:mvn/version "1.0.5"}
+  com.taoensso/sente {:mvn/version "1.16.2"}}
+
  :aliases
  {:dev
   {:extra-paths ["dev" "test"]
@@ -6,4 +16,14 @@
    {org.clojure/test.check {:mvn/version "1.1.0"}
     org.clojure/tools.namespace {:mvn/version "1.1.0"}
     expectations/clojure-test {:mvn/version "1.2.1"}
-    pjstadig/humane-test-output {:mvn/version "0.11.0"}}}}}
+    pjstadig/humane-test-output {:mvn/version "0.11.0"}
+    ring/ring-devel {:mvn/version "1.9.2"}}}
+
+  :build/cljs
+  {:extra-deps
+   {thheller/shadow-cljs {:mvn/version "2.12.5"}
+    re-frame/re-frame {:mvn/version "1.2.0"}
+    day8.re-frame/http-fx {:mvn/version "0.2.3"}}}
+  
+  :shadow-cljs
+  {:main-opts ["-m" "shadow.cljs.devtools.cli"]}}}
