@@ -6,11 +6,13 @@
    :headers {"Content-Type" "text/html; charset=UTF-8"}
    :body body})
 
-(defn index [_]
+(defn index [{:keys [anti-forgery-token]}]
   (response
    (page/html5
     {:lang "de"}
     [:head
+     [:meta {:name "token"
+             :content anti-forgery-token}]
      [:title "Schafkopf."]]
     [:body
      [:div#app]
