@@ -10,8 +10,10 @@
             [mount.core :as mount]
             [wrench.core :as wrench]
             [pjstadig.humane-test-output]
-            [schafkopf.core :as sk]
+            [schafkopf.backend.control :as ctl]
+            [schafkopf.backend.game :as game]
             [schafkopf.backend.server :as backend]
+            [schafkopf.spec :as sk]
             [user.cljs-build :as cljs-build]))
 
 (ns-tools/set-refresh-dirs "src" "dev" "test")
