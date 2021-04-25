@@ -3,5 +3,11 @@
 
 (rf/reg-event-fx
  ::join
- (fn [_ _]
-   {:chsk/connect nil}))
+ (fn [{:keys [db]} [_ code]]
+   {:db (assoc db ::code code)
+    :chsk/connect nil}))
+
+(rf/reg-sub
+ ::code
+ (fn [db]
+   (::code db)))

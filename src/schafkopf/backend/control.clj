@@ -1,14 +1,18 @@
 (ns schafkopf.backend.control
   (:require [clojure.set :as set]
+            [clojure.string :as str]
             [taoensso.timbre :as timbre]))
 
 (def game-atom (atom nil))
 
 (defn generate-game-code []
-  (format "%06d" (rand-int 1000000)))
+  (format "%04d" (rand-int 10000)))
 
 (defn generate-uid []
   (.toString (java.util.UUID/randomUUID)))
+
+(defn valid-name? [name]
+  (not (str/blank? name)))
 
 (defn new-game []
   {:code (generate-game-code)
@@ -35,7 +39,7 @@
     (when send-fn
       (send-fn [event (client-view game uid)]))))
 
-(defn join-game
+(defn join-game!
   "Makes a user join a game."
   [game-atom uid name send-fn]
   (if (some? (get-in @game-atom [:clients uid]))

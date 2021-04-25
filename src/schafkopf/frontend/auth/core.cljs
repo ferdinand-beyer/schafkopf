@@ -20,10 +20,11 @@
 (rf/reg-event-fx
  ::host-login-succeeded
  (fn [{:keys [db]} [_ result]]
-   {:db (-> db
-            (dissoc ::authenticating ::host-error)
-            (assoc ::role :host))
-    :dispatch [::game/join]}))
+   (let [code (:code result)]
+     {:db (-> db
+              (dissoc ::authenticating ::host-error)
+              (assoc ::role :host))
+      :dispatch [::game/join code]})))
 
 (rf/reg-event-db
  ::host-login-failed
@@ -36,6 +37,37 @@
                   "Kennwort ist nicht korrekt"
                   "Unbekannter Fehler"))))))
 
+(rf/reg-event-fx
+ ::guest-join
+ backend-interceptors
+ (fn [{:keys [db]} [_ code name]]
+   {:db (assoc db ::authenticating :guest)
+    :http-xhrio {:method :post
+                 :uri "/api/join"
+                 :params {:code code
+                          :name name}
+                 :format (ajax/transit-request-format)
+                 :response-format (ajax/transit-response-format)
+                 :on-success [::guest-join-succeeded]
+                 :on-failure [::guest-join-failed]}}))
+
+(rf/reg-event-fx
+ ::guest-join-succeeded
+ (fn [{:keys [db]} [_ result]]
+   (let [code (:code result)]
+     {:db (-> db
+              (dissoc ::authenticating ::guest-error)
+              (assoc ::role :guest))
+      :dispatch [::game/join code]})))
+
+(rf/reg-event-db
+ ::guest-join-failed
+ (fn [db [_ result]]
+   (let [error (get-in result [:response :error])]
+     (-> db
+         (dissoc ::authenticating)
+         (assoc ::guest-error "Konnte nicht beitreten")))))
+
 (rf/reg-sub
  ::host-loading?
  (fn [db]
@@ -45,6 +77,16 @@
  ::host-login-error
  (fn [db]
    (::host-error db)))
+
+(rf/reg-sub
+ ::guest-loading?
+ (fn [db]
+   (= :guest (::authenticating db))))
+
+(rf/reg-sub
+ ::guest-join-error
+ (fn [db]
+   (::guest-error db)))
 
 (rf/reg-sub
  ::role

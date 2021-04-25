@@ -42,16 +42,34 @@
          "Anmelden"]]])))
 
 (defn guest-form []
-  [:form
-   [mui/text-field {:label "Dein Name"
-                    :full-width true}]
-   [mui/text-field {:label "Code"
-                    :full-width true}]
-   [actions
-    [mui/button
-     {:type :submit
-      :color :primary}
-     "Spielen"]]])
+  (let [name (r/atom "")
+        code (r/atom "")
+        loading? (rf/subscribe [::auth/guest-loading?])
+        error-text (rf/subscribe [::auth/guest-join-error])]
+    (fn []
+      [:form
+       {:on-submit (fn [e]
+                     (.preventDefault e)
+                     (rf/dispatch [::auth/guest-join @code @name]))}
+       [mui/text-field {:label "Code"
+                        :full-width true
+                        :value @code
+                        :disabled @loading?
+                        :error (some? @error-text)
+                        :helper-text @error-text
+                        :on-change #(reset! code (.. % -target -value))}]
+       [mui/text-field {:label "Name"
+                        :full-width true
+                        :value @name
+                        :disabled @loading?
+                        :on-change #(reset! name (.. % -target -value))}]
+       [actions
+        (when @loading?
+          [mui/circular-progress {:size 24}])
+        [mui/button
+         {:type :submit
+          :color :primary}
+         "Spielen"]]])))
 
 (def auth-screen
   (mui/with-styles

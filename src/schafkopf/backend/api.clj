@@ -29,30 +29,53 @@
   (timbre/debug "Sending game event to user" uid)
   (chsk-send! uid event))
 
+(defn do-join [session role game name]
+  (let [uid (or (:uid session) (ctl/generate-uid))
+        send-fn (partial send-game-event! uid)]
+    (if-let [state (ctl/join-game! game uid name send-fn)]
+      (let [code (:code state)]
+        {:status 200
+         :body {:role :host
+                :code code}
+         :session (assoc session
+                         :role role
+                         :uid uid
+                         :code code)})
+      {:status 400
+       :body {:error :game-full}})))
+
 (defn handle-authenticate
   [{:keys [body-params session]}]
   (if (= host-password (:password body-params))
     (do
       (timbre/info "Host authentication successful")
-      (let [game (ctl/ensure-game!)
-            uid (or (:uid session) (ctl/generate-uid))
-            send-fn (partial send-game-event! uid)
-            state (ctl/join-game game uid "Host" send-fn)
-            code (:code state)]
-        {:status 200
-         :body {:role :host
-                :code code}
-         :session (assoc session
-                         :role :host
-                         :uid uid
-                         :game code)}))
+      (do-join session :host (ctl/ensure-game!) "Host"))
     (do
       (timbre/info "Host authentication failed (invalid password)")
       {:status 403
        :body {:error :invalid-credentials}})))
 
+(defn handle-guest-join
+  [{:keys [body-params session]}]
+  (let [{:keys [code name]} body-params
+        game (ctl/find-game code)]
+    (cond
+      (not (ctl/valid-name? name))
+      {:status 400
+       :body {:error :invalid-name}}
+
+      (nil? game)
+      {:status 403
+       :body {:error :invalid-code}}
+
+      :else
+      (do
+        (timbre/info "Guest authentication successful")
+        (do-join session :guest game name)))))
+
 (def routes
   [["/api" {:middleware [wrap-format]}
-    ["/authenticate" {:post handle-authenticate}]]
+    ["/authenticate" {:post handle-authenticate}]
+    ["/join" {:post handle-guest-join}]]
    ["/chsk" {:get chsk-ajax-get-or-ws-handshake
              :post chsk-ajax-post}]])
