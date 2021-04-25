@@ -1,5 +1,6 @@
 (ns schafkopf.backend.api
-  (:require [muuntaja.middleware :refer [wrap-format]]
+  (:require [mount.core :as mount]
+            [muuntaja.middleware :refer [wrap-format]]
             [wrench.core :as config]
             [taoensso.sente :as sente]
             [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
@@ -9,9 +10,15 @@
 
 (config/def host-password {:secret true})
 
-(defn channel-socket-authorized? [req]
+;;;; Channel sockets
+
+(defn channel-socket-authorized?
+  "Returns true if the user is authorized to establish a channel socket,
+   false otherwise."
+  [req]
   (some? (get-in req [:session :uid])))
 
+;;; TODO: Make this a mount state?
 (let [{:keys [ch-recv send-fn connected-uids
               ajax-post-fn ajax-get-or-ws-handshake-fn]}
       (sente/make-channel-socket!
@@ -25,15 +32,34 @@
   (def chsk-send! send-fn)
   (def connected-uids connected-uids))
 
+;;;; Message handlers
+
+(defmulti -handle-event-message :id)
+
+(defmethod -handle-event-message :default [ev-msg]
+  (timbre/debug "Unhandled message: " (:id ev-msg)))
+
+(defn handle-event-message [ev-msg]
+  (timbre/debug "Received event message:" (:id ev-msg))
+  (-handle-event-message ev-msg))
+
+(mount/defstate event-router
+  :start (sente/start-server-chsk-router! ch-recv handle-event-message)
+  :stop (event-router))
+
 (defn send-game-event! [uid event]
   (timbre/debug "Sending game event to user" uid)
   (chsk-send! uid event))
 
-(defn do-join [session role game name]
+;;; Ring handlers
+
+(defn do-join
+  "Lets the connected user join a game, and returns a ring response."
+  [session role game name]
   (let [uid (or (:uid session) (ctl/generate-uid))
         send-fn (partial send-game-event! uid)]
-    (if-let [state (ctl/join-game! game uid name send-fn)]
-      (let [code (:code state)]
+    (if-let [user-game (ctl/join-game! game uid name send-fn)]
+      (let [code (:session/code user-game)]
         {:status 200
          :body {:role :host
                 :code code}

@@ -7,20 +7,21 @@
             [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
             [clojure.spec.test.alpha :as stest]
+            [clojure.string :as str]
             [mount.core :as mount]
             [wrench.core :as wrench]
             [pjstadig.humane-test-output]
             [schafkopf.backend.control :as ctl]
-            [schafkopf.backend.game :as game]
             [schafkopf.backend.server :as backend]
-            [schafkopf.spec :as sk]
+            [schafkopf.game :as game]
             [user.cljs-build :as cljs-build]))
 
 (ns-tools/set-refresh-dirs "src" "dev" "test")
 
 (pjstadig.humane-test-output/activate!)
 
-(def app-states [#'backend/server])
+(defn app-states []
+  (filter #(str/starts-with? % "#'schafkopf") (mount/find-all-states)))
 
 (defn start []
   (wrench/reset! :env (wrench/from-file "dev/config.edn"))
@@ -28,7 +29,7 @@
   (mount/start))
 
 (defn stop []
-  (mount/stop app-states))
+  (mount/stop (app-states)))
 
 (defn reset []
   (stop)
