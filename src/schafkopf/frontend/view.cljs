@@ -1,8 +1,13 @@
 (ns schafkopf.frontend.view
-  (:require [mui-bien.core :as mui]
-            [schafkopf.frontend.start.view :as start]))
+  (:require [re-frame.core :as rf]
+            [mui-bien.core :as mui]
+            [schafkopf.frontend.auth.view :as auth]))
 
 (defn root []
-  [:<>
-   [mui/css-baseline]
-   [start/start-screen]])
+  (let [role @(rf/subscribe [:schafkopf.frontend.auth.core/role])]
+    [:<>
+     [mui/css-baseline]
+     (case role
+       :host [:h1 "Host"]
+       :guest [:h1 "Guest"]
+       [auth/auth-screen])]))

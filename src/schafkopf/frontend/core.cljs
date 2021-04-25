@@ -5,9 +5,6 @@
 
 (enable-console-print!)
 
-(def anti-forgery-token
-  (some-> (.querySelector js/document "meta[name=token]") (.-content)))
-
 (defn render []
   (reagent.dom/render [view/root]
                       (.getElementById js/document "app")))

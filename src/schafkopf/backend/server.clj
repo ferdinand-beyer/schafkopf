@@ -4,6 +4,7 @@
             [org.httpkit.server :as http-kit]
             [reitit.ring :as ring]
             [ring.middleware.defaults :as ring-def]
+            [schafkopf.backend.api :as api]
             [schafkopf.backend.pages :as pages]))
 
 (config/def port {:name "HTTP_PORT" :spec int? :default 8000})
@@ -14,7 +15,7 @@
 
 (def ring-handler
   (-> (ring/ring-handler
-       (ring/router routes)
+       (ring/router [routes api/routes])
        (ring/create-default-handler))
       (ring-def/wrap-defaults ring-def/site-defaults)))
 

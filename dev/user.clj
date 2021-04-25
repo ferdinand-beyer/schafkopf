@@ -8,18 +8,22 @@
             [clojure.spec.gen.alpha :as sgen]
             [clojure.spec.test.alpha :as stest]
             [mount.core :as mount]
+            [wrench.core :as wrench]
             [pjstadig.humane-test-output]
             [schafkopf.core :as sk]
             [schafkopf.backend.server :as backend]
             [user.cljs-build :as cljs-build]))
 
-(ns-tools/set-refresh-dirs "src" "dev" "test")
+; Refresh all directories (include local override deps)
+;(ns-tools/set-refresh-dirs "src" "dev" "test")
 
 (pjstadig.humane-test-output/activate!)
 
 (def app-states [#'backend/server])
 
 (defn start []
+  (wrench/reset! :env (wrench/from-file "dev/config.edn"))
+  (wrench/validate-and-print)
   (mount/start))
 
 (defn stop []

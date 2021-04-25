@@ -1,6 +1,9 @@
-(ns schafkopf.frontend.start.view
+(ns schafkopf.frontend.auth.view
   (:require [mui-bien.core :as mui]
-            ["@material-ui/core/styles" :as mui-styles]))
+            ["@material-ui/core/styles" :as mui-styles]
+            [reagent.core :as r]
+            [re-frame.core :as rf]
+            [schafkopf.frontend.auth.core :as auth]))
 
 (def actions
   (mui/with-styles
@@ -12,15 +15,31 @@
      [:div {:class (:root classes)} children])))
 
 (defn host-form []
-  [:form
-   [mui/text-field {:label "Kennwort"
-                    :type :password
-                    :full-width true}]
-   [actions
-    [mui/button
-     {:type :submit
-      :color :primary}
-     "Anmelden"]]])
+  (let [password (r/atom "")
+        loading? (rf/subscribe [::auth/host-loading?])
+        error-text (rf/subscribe [::auth/host-login-error])]
+    (fn []
+      [:form
+       {:on-submit (fn [e]
+                     (.preventDefault e)
+                     (rf/dispatch [::auth/host-login @password]))}
+       [mui/text-field
+        {:label "Kennwort"
+         :type :password
+         :full-width true
+         :value @password
+         :disabled @loading?
+         :error (some? @error-text)
+         :helper-text @error-text
+         :on-change #(reset! password (.. % -target -value))}]
+       [actions
+        (when @loading?
+          [mui/circular-progress {:size 24}])
+        [mui/button
+         {:type :submit
+          :color :primary
+          :disabled @loading?}
+         "Anmelden"]]])))
 
 (defn guest-form []
   [:form
@@ -34,7 +53,7 @@
       :color :primary}
      "Spielen"]]])
 
-(def start-screen
+(def auth-screen
   (mui/with-styles
    (fn [theme]
      {:root {:minHeight "100vh"

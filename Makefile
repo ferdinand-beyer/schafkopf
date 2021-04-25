@@ -21,7 +21,7 @@ build-cljs:
 
 .PHONY: repl
 repl:
-	clj -M:dev:build/cljs:repl/cider
+	clj -M:dev:local:build/cljs:repl/cider
 
 .PHONY: clean
 clean:
