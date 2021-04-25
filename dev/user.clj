@@ -14,8 +14,7 @@
             [schafkopf.backend.server :as backend]
             [user.cljs-build :as cljs-build]))
 
-; Refresh all directories (include local override deps)
-;(ns-tools/set-refresh-dirs "src" "dev" "test")
+(ns-tools/set-refresh-dirs "src" "dev" "test")
 
 (pjstadig.humane-test-output/activate!)
 

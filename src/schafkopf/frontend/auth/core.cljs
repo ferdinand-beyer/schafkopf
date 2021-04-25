@@ -1,7 +1,8 @@
 (ns schafkopf.frontend.auth.core
   (:require [ajax.core :as ajax]
             [re-frame.core :as rf]
-            [schafkopf.frontend.comm :refer [backend-interceptors]]))
+            [schafkopf.frontend.comm :refer [backend-interceptors]]
+            [schafkopf.frontend.game.core :as game]))
 
 (rf/reg-event-fx
  ::host-login
@@ -16,12 +17,13 @@
                  :on-success [::host-login-succeeded]
                  :on-failure [::host-login-failed]}}))
 
-(rf/reg-event-db
+(rf/reg-event-fx
  ::host-login-succeeded
- (fn [db [_ result]]
-   (-> db
-       (dissoc ::authenticating ::host-error)
-       (assoc ::role :host))))
+ (fn [{:keys [db]} [_ result]]
+   {:db (-> db
+            (dissoc ::authenticating ::host-error)
+            (assoc ::role :host))
+    :dispatch [::game/join]}))
 
 (rf/reg-event-db
  ::host-login-failed
