@@ -2,12 +2,14 @@
  
  :deps
  {mount/mount {:mvn/version "0.1.16"}
+  wrench/wrench {:mvn/version "0.3.3"}
   http-kit/http-kit {:mvn/version "2.5.3"}
   ring/ring-core {:mvn/version "1.9.2"}
   ring/ring-defaults {:mvn/version "0.3.2"}
   metosin/reitit-ring {:mvn/version "0.5.13"}
   hiccup/hiccup {:mvn/version "1.0.5"}
-  com.taoensso/sente {:mvn/version "1.16.2"}}
+  com.taoensso/sente {:mvn/version "1.16.2"}
+  com.taoensso/timbre {:mvn/version "5.1.2"}}
 
  :aliases
  {:dev
@@ -22,8 +24,10 @@
   :build/cljs
   {:extra-deps
    {thheller/shadow-cljs {:mvn/version "2.12.5"}
+    com.fzakaria/slf4j-timbre {:mvn/version "0.3.21"}
     re-frame/re-frame {:mvn/version "1.2.0"}
-    day8.re-frame/http-fx {:mvn/version "0.2.3"}}}
+    day8.re-frame/http-fx {:mvn/version "0.2.3"}
+    org.clojars.fbeyer/mui-bien {:mvn/version "0.1.0"}}}
   
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}}}

@@ -1,6 +1,8 @@
-(ns schafkopf.frontend.view)
+(ns schafkopf.frontend.view
+  (:require [mui-bien.core :as mui]
+            [schafkopf.frontend.start.view :as start]))
 
 (defn root []
   [:<>
-   [:h1 "Schafkopf."]
-   [:p "Nothing to see here yet."]])
+   [mui/css-baseline]
+   [start/start-screen]])

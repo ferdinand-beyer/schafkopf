@@ -3,6 +3,11 @@
             [re-frame.core :as rf]
             [schafkopf.frontend.view :as view]))
 
+(enable-console-print!)
+
+(def anti-forgery-token
+  (some-> (.querySelector js/document "meta[name=token]") (.-content)))
+
 (defn render []
   (reagent.dom/render [view/root]
                       (.getElementById js/document "app")))
@@ -12,5 +17,4 @@
   (render))
 
 (defn ^:export init! []
-  (enable-console-print!)
   (render))

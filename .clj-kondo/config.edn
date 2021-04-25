@@ -1,1 +1,2 @@
-{:lint-as {mount.core/defstate clj-kondo.lint-as/def-catch-all}}
+{:lint-as {mount.core/defstate clj-kondo.lint-as/def-catch-all
+           wrench.core/def clojure.core/def}}
