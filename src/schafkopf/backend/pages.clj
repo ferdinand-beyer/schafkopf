@@ -16,7 +16,7 @@
     [:head
      [:meta {:charset "utf-8"}]
      [:meta {:name "viewport" :content "minimum-scale=1, initial-scale=1, width=device-width"}]
-     [:meta {:name "token" :content anti-forgery-token}]
+     [:meta {:name "csrf-token" :content anti-forgery-token}]
      [:title "Schafkopf"]
      [:link {:rel "stylesheet"
              :href "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"}]]

@@ -1,6 +1,5 @@
 (ns schafkopf.frontend.auth.core
-  (:require [ajax.core :as ajax]
-            [re-frame.core :as rf]
+  (:require [re-frame.core :as rf]
             [schafkopf.frontend.comm :refer [backend-interceptors]]
             [schafkopf.frontend.game.core :as game]))
 
@@ -12,8 +11,6 @@
     :http-xhrio {:method :post
                  :uri "/api/authenticate"
                  :params {:password password}
-                 :format (ajax/transit-request-format)
-                 :response-format (ajax/transit-response-format)
                  :on-success [::host-login-succeeded]
                  :on-failure [::host-login-failed]}}))
 
@@ -46,8 +43,6 @@
                  :uri "/api/join"
                  :params {:code code
                           :name name}
-                 :format (ajax/transit-request-format)
-                 :response-format (ajax/transit-response-format)
                  :on-success [::guest-join-succeeded]
                  :on-failure [::guest-join-failed]}}))
 
@@ -62,11 +57,10 @@
 
 (rf/reg-event-db
  ::guest-join-failed
- (fn [db [_ result]]
-   (let [error (get-in result [:response :error])]
-     (-> db
-         (dissoc ::authenticating)
-         (assoc ::guest-error "Konnte nicht beitreten")))))
+ (fn [db _]
+   (-> db
+       (dissoc ::authenticating)
+       (assoc ::guest-error "Konnte nicht beitreten"))))
 
 (rf/reg-sub
  ::host-loading?

@@ -1,34 +1,46 @@
 (ns schafkopf.frontend.comm
-  (:require [cljs.core.async :as async]
+  (:require [ajax.core :as ajax]
             [re-frame.core :as rf]
             [day8.re-frame.http-fx]
             [taoensso.sente :as sente]
             [taoensso.sente.packers.transit :as sente-transit]
-            [taoensso.timbre :as timbre])
-  (:require-macros
-   [cljs.core.async.macros :refer (go go-loop)]))
+            [taoensso.timbre :as timbre]))
 
 (def anti-forgery-token
-  (some-> (.querySelector js/document "meta[name=token]") (.-content)))
+  (some-> (.querySelector js/document "meta[name=csrf-token]") (.-content)))
 
-(def translate-backend-call
-  "Interceptor translating backend call effects to HTTP requests."
+(def default-backend-request
+  {:method :post
+   :headers {"X-CSRF-Token" anti-forgery-token}
+   :format (ajax/transit-request-format)
+   :response-format (ajax/transit-response-format)})
+
+(defn enrich-http-xhrio [request]
+  (merge default-backend-request request))
+
+(def enrich-http-xhrio-interceptor
+  "Interceptor enriching :http-xhrio effects with default values."
   (rf/->interceptor
-   :id :secure-comm
+   :id :enrich-http-xhrio
    :after (fn [context]
-            (if (some? (get-in context [:effects :http-xhrio]))
-              (assoc-in context [:effects :http-xhrio :headers "X-CSRF-Token"] anti-forgery-token)
-              context))))
+            (cond-> context
+              (some? (get-in context [:effects :http-xhrio]))
+              (update-in [:effects :http-xhrio] enrich-http-xhrio)))))
 
-(def backend-interceptors [translate-backend-call])
+(def backend-interceptors [enrich-http-xhrio-interceptor])
 
 (def channel-socket (atom nil))
 
 (defmulti -handle-event! :id)
 
 (defmethod -handle-event! :default
-  [{:keys [event]}]
-  (timbre/warn "Unhandled server event" event))
+  [{:keys [id event]}]
+  (timbre/info "Push event from server:" id)
+  (some-> event (rf/dispatch)))
+
+(defmethod -handle-event! :chsk/handshake
+  [{:keys [?data]}]
+  (timbre/debug "Handshake: " ?data))
 
 (defmethod -handle-event! :chsk/state
   [{:keys [?data]}]
@@ -39,13 +51,11 @@
 
 (defmethod -handle-event! :chsk/recv
   [{:keys [?data]}]
-  ;; TODO Wrap events and dispatch all to re-frame here
-  (timbre/info "Push event from server:" ?data))
+  (timbre/warn "Unhandled :chsk/recv event:" ?data))
 
-(defmethod -handle-event! :chsk/handshake
-  [{:keys [?data]}]
-  (let [[?uid ?csrf-token ?handshake-data] ?data]
-    (timbre/debug "Handshake: " ?data)))
+(defmethod -handle-event! :chsk/ws-ping
+  [{:keys [event]}]
+  (timbre/info "Received:" event))
 
 (defn handle-event! [ev-msg]
   (-handle-event! ev-msg))
@@ -65,8 +75,8 @@
          "/chsk"
          anti-forgery-token
          {:packer (sente-transit/get-transit-packer)
-          :wrap-recv-evs? false}) ; TODO Set to true
-        
+          :wrap-recv-evs? false})
+
         stop-router-fn (sente/start-client-chsk-router! ch-recv handle-event!)]
     (replace-channel-socket! (assoc chsk-map :stop-router-fn stop-router-fn))))
 
