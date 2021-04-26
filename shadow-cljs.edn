@@ -3,7 +3,16 @@
   {:target :browser
    :output-dir "resources/public/js"
    :asset-path "/js"
-   :modules {:main {:init-fn schafkopf.frontend.core/init!}}}
+   ;:module-loader true
+   ;:module-hash-names true
+   :modules
+   {:base {}
+    :reagent {:entries [reagent.core re-frame.core]
+              :depends-on #{:base}}
+    :mui {:entries [mui-bien.core]
+          :depends-on #{:base :reagent}}
+    :main {:init-fn schafkopf.frontend.core/init!
+           :depends-on #{:base :mui :reagent}}}}
 
   :test
   {:target :browser-test

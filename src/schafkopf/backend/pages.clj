@@ -21,4 +21,8 @@
              :href "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"}]]
     [:body
      [:div#app]
+     ;; TODO: Read manifest.edn!
+     (page/include-js "/js/base.js")
+     (page/include-js "/js/reagent.js")
+     (page/include-js "/js/mui.js")
      (page/include-js "/js/main.js")])))
