@@ -11,7 +11,7 @@
 
 (def routes
   [["/" {:get pages/index}]
-   ["/js/*" (ring/create-resource-handler)]])
+   ["/assets/js/*" (ring/create-resource-handler)]])
 
 (def ring-handler
   (-> (ring/ring-handler

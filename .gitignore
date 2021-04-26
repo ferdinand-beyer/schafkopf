@@ -7,6 +7,6 @@
 .shadow-cljs/
 build/
 node_modules/
-resources/public/js/
+resources/public/assets/js/
 package.json
 package-lock.json

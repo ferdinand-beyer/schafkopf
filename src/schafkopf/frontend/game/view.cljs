@@ -4,7 +4,7 @@
             [schafkopf.frontend.game.core :as game]))
 
 (defn card-url [[suit rank]]
-  (str "/img/decks/saxonian/" (name suit) "-"
+  (str "/assets/img/decks/saxonian/" (name suit) "-"
        (if (keyword? rank) (name rank) rank)
        ".jpg"))
 

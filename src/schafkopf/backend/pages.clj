@@ -1,5 +1,6 @@
 (ns schafkopf.backend.pages
-  (:require [hiccup.page :as page]))
+  (:require [hiccup.page :as page]
+            [schafkopf.backend.assets :as assets]))
 
 (defn response [body]
   {:status 200
@@ -21,8 +22,5 @@
              :href "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"}]]
     [:body
      [:div#app]
-     ;; TODO: Read manifest.edn!
-     (page/include-js "/js/base.js")
-     (page/include-js "/js/reagent.js")
-     (page/include-js "/js/mui.js")
-     (page/include-js "/js/main.js")])))
+     (for [url (assets/js-assets)]
+       (page/include-js url))])))

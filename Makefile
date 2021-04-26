@@ -7,7 +7,7 @@ MAKEFLAGS += --no-builtin-rules --warn-undefined-variables
 .DELETE_ON_ERROR:
 
 BUILD_DIR := build
-JS_DIR := resources/public/js
+JS_DIR := resources/public/assets/js
 
 .PHONY: all
 all:
