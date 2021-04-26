@@ -30,6 +30,7 @@
   (def chsk-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
   (def ch-recv ch-recv)
   (def chsk-send! send-fn)
+  ;; TODO: Notify control when a uid disconnects
   (def connected-uids connected-uids))
 
 ;;;; Message handlers
@@ -53,20 +54,21 @@
 
 ;;; Ring handlers
 
+;; TODO: Move more of this logic to control.
+;; Guests 
 (defn do-join
   "Lets the connected user join a game, and returns a ring response."
   [session role game name]
   (let [uid (or (:uid session) (ctl/generate-uid))
         send-fn (partial send-game-event! uid)]
     (if-let [user-game (ctl/join-game! game uid name send-fn)]
-      (let [code (:session/code user-game)]
-        {:status 200
-         :body {:role :host
-                :code code}
-         :session (assoc session
-                         :role role
-                         :uid uid
-                         :code code)})
+      {:status 200
+       :body {:role :host
+              :game user-game}
+       :session (assoc session
+                       :role role
+                       :uid uid
+                       :code (:session/code user-game))}
       {:status 400
        :body {:error :game-full}})))
 

@@ -6,9 +6,9 @@
             [schafkopf.frontend.game.view :as game-view]))
 
 (defn root []
-  (let [code @(rf/subscribe [::game/code])]
+  (let [active? @(rf/subscribe [::game/active?])]
     [:<>
      [mui/css-baseline]
-     (if (some? code)
+     (if active?
        [game-view/game-screen]
        [auth-view/auth-screen])]))

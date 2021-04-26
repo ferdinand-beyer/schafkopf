@@ -14,14 +14,14 @@
                  :on-success [::host-login-succeeded]
                  :on-failure [::host-login-failed]}}))
 
+(defn handle-join [db {:keys [role game]}]
+  {:db (assoc db ::role role)
+   :dispatch [::game/init game]})
+
 (rf/reg-event-fx
  ::host-login-succeeded
  (fn [{:keys [db]} [_ result]]
-   (let [code (:code result)]
-     {:db (-> db
-              (dissoc ::authenticating ::host-error)
-              (assoc ::role :host))
-      :dispatch [::game/join code]})))
+   (handle-join (dissoc db ::authenticating ::host-error) result)))
 
 (rf/reg-event-db
  ::host-login-failed
@@ -49,11 +49,7 @@
 (rf/reg-event-fx
  ::guest-join-succeeded
  (fn [{:keys [db]} [_ result]]
-   (let [code (:code result)]
-     {:db (-> db
-              (dissoc ::authenticating ::guest-error)
-              (assoc ::role :guest))
-      :dispatch [::game/join code]})))
+   (handle-join (dissoc db ::authenticating ::guest-error) result)))
 
 (rf/reg-event-db
  ::guest-join-failed

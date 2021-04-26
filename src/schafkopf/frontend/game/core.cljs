@@ -2,12 +2,80 @@
   (:require [re-frame.core :as rf]))
 
 (rf/reg-event-fx
- ::join
- (fn [{:keys [db]} [_ code]]
-   {:db (assoc db ::code code)
+ ::init
+ (fn [{:keys [db]} [_ game]]
+   {:db (assoc db ::game game)
     :chsk/connect nil}))
+
+(rf/reg-event-db
+ :game/update
+ (fn [db [_ game]]
+   (assoc db ::game game)))
+
+;;;; Subscriptions
+
+(rf/reg-sub
+ ::game
+ (fn [db _]
+   (::game db)))
+
+(rf/reg-sub
+ ::active?
+ :<- [::game]
+ (fn [game _]
+   (some? game)))
 
 (rf/reg-sub
  ::code
- (fn [db]
-   (::code db)))
+ :<- [::game]
+ (fn [game _]
+   (:session/code game)))
+
+(rf/reg-sub
+ ::seat
+ :<- [::game]
+ (fn [game _]
+   (:player/seat game)))
+
+(defn rotate-seat [seat offset]
+  (rem (+ seat offset) 4))
+
+(defn seat-fn [offset]
+  (fn [seat _]
+    (rotate-seat seat offset)))
+
+(rf/reg-sub
+ ::left-seat
+ :<- [::seat]
+ (seat-fn 1))
+
+(rf/reg-sub
+ ::across-seat
+ :<- [::seat]
+ (seat-fn 2))
+
+(rf/reg-sub
+ ::right-seat
+ :<- [::seat]
+ (seat-fn 3))
+
+(rf/reg-sub
+ ::peers
+ :<- [::game]
+ (fn [game _]
+   (:player/peers game)))
+
+(rf/reg-sub
+ ::peer
+ :<- [::peers]
+ (fn [peers [_ seat]]
+   (get peers seat)))
+
+(defn subscribe-peer [[_ seat]]
+  (rf/subscribe [::peer seat]))
+
+(rf/reg-sub
+ ::peer-name
+ subscribe-peer
+ (fn [peer _]
+   (:player/name peer)))

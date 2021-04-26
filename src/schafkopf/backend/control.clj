@@ -41,11 +41,16 @@
 (defn user-game
   "Returns the view of the game for a user identified by their uid."
   [game uid]
-  ;; TODO: Merge names
   (when-let [seat (get-in game [::users uid ::seat])]
     (->
      (game/player-game game seat)
-     (assoc :session/code (::code game)))))
+     (assoc :session/code (::code game))
+     (as-> cg
+           (reduce
+            (fn [cg [_ {::keys [seat name]}]]
+              (assoc-in cg [:player/peers seat :player/name] name))
+            cg
+            (::users game))))))
 
 (defn free-seats
   "Returns the set of free seats in a game."
@@ -58,9 +63,13 @@
 (defn broadcast-event!
   "Sends an event to all connected users of a game."
   [game event]
+  {:pre [(vector? event)]}
   (doseq [[uid {::keys [send-fn]}] (::users game)]
     (when send-fn
-      (send-fn [event (user-game game uid)]))))
+      (send-fn (conj event (user-game game uid))))))
+
+(defn broadcast-game! [game]
+  (broadcast-event! game [:game/update]))
 
 (defn join-game!
   "Makes a user join a game.  If they are already playing, does nothing.
@@ -78,7 +87,7 @@
                               ::seat seat})
                    game))
           game (swap! game-atom join)]
-      (when (some? (get-in game [::users uid]))
+      (when (some? (get-in @game-atom [::users uid]))
         (timbre/info "User" uid "joined game" (::code game))
-        (broadcast-event! game :player/joined)
+        (broadcast-game! game)
         (user-game game uid)))))
