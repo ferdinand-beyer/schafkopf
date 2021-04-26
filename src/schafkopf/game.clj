@@ -1,3 +1,7 @@
+;; IDEA - split this into per-entity namespaces?
+;; schafkopf.deck
+;; schafkopf.game
+;; schafkopf.player
 (ns schafkopf.game
   (:require [clojure.spec.alpha :as s]))
 
@@ -168,7 +172,7 @@
 (s/fdef take-trick
   :args (s/cat :game :schafkopf/game
                :seat :player/seat)
-  :ret ::game)
+  :ret :schafkopf/game)
 
 (defn take-trick
   "Updates the game when the given player takes the current trick."

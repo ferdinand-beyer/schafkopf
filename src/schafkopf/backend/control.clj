@@ -2,8 +2,7 @@
   (:require [clojure.set :as set]
             [clojure.spec.alpha :as s]
             [taoensso.timbre :as timbre]
-            [schafkopf.game :as game]
-            [schafkopf.spec :as spec]))
+            [schafkopf.game :as game]))
 
 (s/def ::uid string?)
 
@@ -20,6 +19,7 @@
 (defn valid-name? [name]
   (s/valid? :player/name name))
 
+;; TODO: server-game?
 (defn new-game []
   (assoc (game/game)
          ::code (generate-code)
@@ -38,6 +38,7 @@
   (when (= code (::code @game-atom))
     game-atom))
 
+;; TODO: client-game?
 (defn user-game
   "Returns the view of the game for a user identified by their uid."
   [game uid]

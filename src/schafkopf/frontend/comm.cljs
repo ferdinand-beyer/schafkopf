@@ -39,6 +39,7 @@
 
 (defmethod -handle-event! :chsk/recv
   [{:keys [?data]}]
+  ;; TODO Wrap events and dispatch all to re-frame here
   (timbre/info "Push event from server:" ?data))
 
 (defmethod -handle-event! :chsk/handshake
@@ -64,7 +65,7 @@
          "/chsk"
          anti-forgery-token
          {:packer (sente-transit/get-transit-packer)
-          :wrap-recv-evs? false})
+          :wrap-recv-evs? false}) ; TODO Set to true
         
         stop-router-fn (sente/start-client-chsk-router! ch-recv handle-event!)]
     (replace-channel-socket! (assoc chsk-map :stop-router-fn stop-router-fn))))
