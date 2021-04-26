@@ -1,6 +1,5 @@
 (ns schafkopf.backend.control
-  (:require [clojure.set :as set]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [taoensso.timbre :as timbre]
             [schafkopf.game :as game]))
 
@@ -51,7 +50,10 @@
 (defn free-seats
   "Returns the set of free seats in a game."
   [game]
-  (set/difference (set (range 4)) (set (map ::seat (::users game)))))
+  (remove (->> (::users game)
+               (map (comp ::seat second))
+               (set))
+          (range 4)))
 
 (defn broadcast-event!
   "Sends an event to all connected users of a game."
