@@ -24,13 +24,6 @@
        :style {:background-image (str "url('" (card-url card) "')")}}
       children])))
 
-#_(defn peer [{:keys [seat]}]
-  (let [name (rf/subscribe [::game/peer-name seat])]
-    (fn [_]
-      [mui/card
-       [:p "Seat: " seat]
-       [:p "Name: " @name]])))
-
 (def peer
   (mui/with-styles
    {:root {}}
@@ -39,8 +32,9 @@
        (fn [_]
          [mui/card
           {:classes {:root (:root classes)}}
-          [:p "Seat: " seat]
-          [:p "Name: " @name]])))))
+          (if (some? @name)
+            [mui/typography {:variant :h6} @name]
+            [mui/typography "(Unbesetzt)"])])))))
 
 (defn card-deco []
   [mui/grid
@@ -74,12 +68,22 @@
   (let [seat (rf/subscribe [::game/across-seat])]
     [peer {:seat @seat}]))
 
+(defn self []
+  (let [seat (rf/subscribe [::game/seat])]
+    [peer {:seat @seat}]))
+
 (defn center []
-  [:p "Stich..."])
+  [:<>
+   [mui/circular-progress]
+   [:p "Warten auf weitere Teilnehmer..."]])
 
 (defn game-info []
   (let [code (rf/subscribe [::game/code])]
-    [:div "Code: " @code]))
+    [:<>
+     [mui/typography
+      {:variant :h5}
+      "Schafkopf"]
+     [mui/typography "Raumcode: " [:strong @code]]]))
 
 (def game-screen
   (mui/with-styles
@@ -99,16 +103,16 @@
          :justify :space-between}
         [mui/grid
          {:item true
-          :xs true}
-         [mui/paper "nw"]]
+          :xs 2}
+         [game-info]]
         [mui/grid
          {:item true
-          :xs true}
+          :xs 4}
          [across]]
         [mui/grid
          {:item true
-          :xs true}
-         [game-info]]]
+          :xs 2}
+         [mui/paper "nw"]]]
        
        ;; Middle Row
        [mui/grid
@@ -132,11 +136,12 @@
        [mui/grid
         {:item true
          :container true
-         :justify :space-between}
+         :justify :space-between
+         :align-items :flex-end}
         [mui/grid
          {:item true
           :xs 2}
-         [mui/paper "sw"]]
+         [self]]
         [mui/grid
          {:item true}
          [card-deco]]

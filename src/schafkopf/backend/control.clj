@@ -37,6 +37,21 @@
   (when (= code (::code @game-atom))
     game-atom))
 
+(defn game-state [game]
+  (cond
+    (< (count (::users game)) 4)
+    :waiting-for-players
+    
+    :else
+    :ready-to-start))
+
+(defn enrich-peers [user-game users]
+  (reduce
+   (fn [g [_ {::keys [seat name]}]]
+     (assoc-in g [:player/peers seat :player/name] name))
+   user-game
+   users))
+
 ;; TODO: client-game?
 (defn user-game
   "Returns the view of the game for a user identified by their uid."
@@ -44,13 +59,9 @@
   (when-let [seat (get-in game [::users uid ::seat])]
     (->
      (game/player-game game seat)
-     (assoc :session/code (::code game))
-     (as-> cg
-           (reduce
-            (fn [cg [_ {::keys [seat name]}]]
-              (assoc-in cg [:player/peers seat :player/name] name))
-            cg
-            (::users game))))))
+     (assoc :session/code (::code game)
+            :session/state (game-state game))
+     (enrich-peers (::users game)))))
 
 (defn free-seats
   "Returns the set of free seats in a game."
@@ -82,8 +93,8 @@
                  (if-let [seat (first (free-seats game))]
                    (assoc-in game [::users uid]
                              {::uid uid
-                              ::name name
                               ::send-fn send-fn
+                              ::name name
                               ::seat seat})
                    game))
           game (swap! game-atom join)]
