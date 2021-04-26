@@ -47,17 +47,18 @@
    {:container true}
    [mui/grid
     {:item true
-     :style {:transform "translate(20px, 10px) rotate(-7deg)"
+     :style {:transform "translate(20px, -10px) rotate(-7deg)"
              :z-index 0}}
     [card {:card [:bells :deuce]}]]
    [mui/grid
     {:item true
-     :style {:z-index 10}}
+     :style {:transform "translate(0px, -20px)"
+             :z-index 10}}
     [card {:card [:acorns :ober]
            :elevation 5}]]
    [mui/grid
     {:item true
-     :style {:transform "translate(-20px, 10px) rotate(7deg)"
+     :style {:transform "translate(-20px, -10px) rotate(7deg)"
              :z-index 3}}
     [card {:card [:acorns 7]}]]])
 
@@ -74,30 +75,72 @@
     [peer {:seat @seat}]))
 
 (defn center []
+  [:p "Stich..."])
+
+(defn game-info []
   (let [code (rf/subscribe [::game/code])]
     [:div "Code: " @code]))
 
 (def game-screen
   (mui/with-styles
-   {:root {:width "100vw"
-           :height "100vh"
-           :display :flex
-           :flex-direction :column
-           :justify-content :space-between
-           :align-content :space-between}
-    :horiz {:display :flex
-            :flex-direction :row
-            :justify-content :space-between
-            :align-content :space-between}
-    :north {}
-    :east {}
-    :south {}
-    :west {}}
-   (fn [{:keys [classes]}]
-     [:div {:class (:root classes)}
-      [:div {:class (:north classes)} [across]]
-      [:div {:class (:horiz classes)}
-       [:div {:class (:west classes)} [left]]
-       [:div {:class (:center classes)} [center]]
-       [:div {:class (:east classes)} [right]]]
-      [:div {:class (:south classes)}]])))
+    {:root {:min-height "100vh"}}
+
+    (fn [{:keys [classes]}]
+      [mui/grid
+       {:classes classes
+        :container true
+        :direction :column
+        :justify :space-between}
+       
+       ;; Top Row
+       [mui/grid
+        {:item true
+         :container true
+         :justify :space-between}
+        [mui/grid
+         {:item true
+          :xs true}
+         [mui/paper "nw"]]
+        [mui/grid
+         {:item true
+          :xs true}
+         [across]]
+        [mui/grid
+         {:item true
+          :xs true}
+         [game-info]]]
+       
+       ;; Middle Row
+       [mui/grid
+        {:item true
+         :container true
+         :justify :space-between
+         :align-items :center}
+        [mui/grid
+         {:item true
+          :xs 2}
+         [left]]
+        [mui/grid
+         {:item true}
+         [center]]
+        [mui/grid
+         {:item true
+          :xs 2}
+         [right]]]
+       
+       ;; Bottom Row
+       [mui/grid
+        {:item true
+         :container true
+         :justify :space-between}
+        [mui/grid
+         {:item true
+          :xs 2}
+         [mui/paper "sw"]]
+        [mui/grid
+         {:item true}
+         [card-deco]]
+        [mui/grid
+         {:item true
+          :xs 2}
+         [mui/paper "se"]]]])))
