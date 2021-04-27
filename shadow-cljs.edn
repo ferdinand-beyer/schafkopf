@@ -1,6 +1,8 @@
 {:builds
  {:app
   {:target :browser
+   ;; TODO: Put those in build/resources/... to strictly separate
+   ;; source files and generated files?
    :output-dir "resources/public/assets/js"
    :asset-path "/assets/js"
    ;:module-loader true

@@ -4,7 +4,7 @@
    Actions are allowed based on predicates:
 
      join! when free-seats?
-     start! when all-present?
+     start! when all-present? and not started?
      play! when my-turn?
      take! when trick-complete?
      score! when game-done?
@@ -42,3 +42,7 @@
   "Returns true when all players are present, false otherwise."
   [game]
   (every? present? (game/players game)))
+
+(defn can-start? [game]
+  (and (all-present? game)
+       (not (game/started? game))))

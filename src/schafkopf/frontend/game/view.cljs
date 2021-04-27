@@ -24,6 +24,7 @@
        :style {:background-image (str "url('" (card-url card) "')")}}
       children])))
 
+;; TODO: Avatar, hand, tricks, score, total score
 (def peer
   (mui/with-styles
    {:root {}}
@@ -36,6 +37,7 @@
             [mui/typography {:variant :h6} @name]
             [mui/typography "(Unbesetzt)"])])))))
 
+;; TODO just for demo :)
 (defn card-deco []
   [mui/grid
    {:container true}
@@ -70,12 +72,28 @@
 
 (defn self []
   (let [seat (rf/subscribe [::game/seat])]
+    ;; TODO: This will not work once we have :player/self
+    ;; need to get this info from the game itself, or using
+    ;; a smart subscription.
     [peer {:seat @seat}]))
 
 (defn center []
-  [:<>
-   [mui/circular-progress]
-   [:p "Warten auf weitere Teilnehmer..."]])
+  (let [started? @(rf/subscribe [::game/started?])
+        can-start? @(rf/subscribe [::game/can-start?])]
+    (cond
+      started?
+      [:p "(Active game)"]
+
+      can-start?
+      [mui/button
+       {:variant :contained
+        :color :primary}
+       "Spiel starten"]
+
+      :else
+      [:<>
+       [mui/circular-progress]
+       [:p "Warten auf weitere Teilnehmer..."]])))
 
 (defn game-info []
   (let [code (rf/subscribe [::game/code])]

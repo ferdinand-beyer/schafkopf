@@ -1,5 +1,7 @@
 (ns schafkopf.frontend.game.core
-  (:require [re-frame.core :as rf]))
+  (:require [re-frame.core :as rf]
+            [schafkopf.game :as game]
+            [schafkopf.protocol :as p]))
 
 (rf/reg-event-fx
  ::init
@@ -24,6 +26,18 @@
  :<- [::game]
  (fn [game _]
    (some? game)))
+
+(rf/reg-sub
+ ::started?
+ :<- [::game]
+ (fn [game _]
+   (game/started? game)))
+
+(rf/reg-sub
+ ::can-start?
+ :<- [::game]
+ (fn [game _]
+   (p/can-start? game)))
 
 (rf/reg-sub
  ::code
