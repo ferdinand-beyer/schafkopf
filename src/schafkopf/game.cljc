@@ -13,7 +13,7 @@
 (s/def :game/deck (s/coll-of :game/card :count 32 :distinct true))
 
 (s/def :player/hand (s/coll-of :game/card :max-count 8 :distinct true :into #{}))
-(s/def :player/trick (s/coll-of :game/card ::kind vector? :count 4 :distinct true))
+(s/def :player/trick (s/coll-of :game/card :kind vector? :count 4 :distinct true))
 
 ;; Uncomplete trick
 (s/def :game/active-trick (s/coll-of :game/card :kind vector? :max-count 4 :distinct true))
@@ -60,7 +60,12 @@
 (s/def :player/peer
   (s/merge :game/player-public
            (s/keys :req [:player/hand-count :player/trick-count])))
-(s/def :player/peers (s/coll-of :player/peer :kind vector? :count 3))
+
+(s/def :player/self #{:player/self})
+(s/def :player/slot (s/or :peer :player/peer
+                          :self :player/self))
+
+(s/def :player/peers (s/coll-of :player/peer :kind vector? :count 4))
 
 (s/def :player/game
   (s/merge :schafkopf/game-public
@@ -94,7 +99,7 @@
   :args (s/cat :game :schafkopf/game :seat :player/seat)
   :ret :player/game)
 
-(defn player-peer [{::keys [score hand tricks]}]
+(defn player-peer [{:player/keys [score hand tricks]}]
   (cond-> #:player{:hand-count (count hand)
                    :trick-count (count tricks)}
     (some? score) (assoc :player/score score)))
@@ -113,6 +118,23 @@
            (player-peer player)
            {:player/seat seat
             :player/peers (mapv player-peer players)})))
+
+;; TODO: Maybe use derive/isa? to form relationships?
+;; TODO: Function to get the game-public
+;; TODO: (round [game-public]) -- tell the current round / number of rounds played
+;; TODO: Implement predicates based on the game
+
+;; TODO: Spec alternatives?
+;; TODO: Name player-publics?
+(s/fdef players
+  :args (s/cat :game (s/alt :game :schafkopf/game-public
+                            :player-game :player/game))
+  :ret (s/coll-of :game/player-public))
+
+(defn players
+  "Takes a game or player-game and returns players or peers."
+  [game]
+  (or (:game/players game) (:player/peers game)))
 
 (defn next-seat [seat]
   (rem (inc seat) 4))

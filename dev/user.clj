@@ -14,6 +14,7 @@
             [schafkopf.backend.control :as ctl]
             [schafkopf.backend.server :as backend]
             [schafkopf.game :as game]
+            [schafkopf.protocol :as protocol]
             [user.cljs-build :as cljs-build]))
 
 (ns-tools/set-refresh-dirs "src" "dev" "test")
