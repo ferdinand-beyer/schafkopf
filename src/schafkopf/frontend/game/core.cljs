@@ -29,7 +29,7 @@
  ::code
  :<- [::game]
  (fn [game _]
-   (:session/code game)))
+   (:server/code game)))
 
 (rf/reg-sub
  ::seat
@@ -78,4 +78,4 @@
  ::peer-name
  subscribe-peer
  (fn [peer _]
-   (:player/name peer)))
+   (:client/name peer)))

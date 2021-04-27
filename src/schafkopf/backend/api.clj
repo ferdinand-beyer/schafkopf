@@ -41,6 +41,17 @@
 (defmethod -handle-event-message :default [ev-msg]
   (timbre/debug "Unhandled message: " (:id ev-msg)))
 
+;; TODO :game/start
+;; TODO :game/reset
+;; TODO :game/end
+;; TODO :client/play (a card)
+;; TODO :client/take (the trick)
+;; TODO :client/score
+;; TODO :client/ready
+;; TODO :client/undo
+;; TODO For client commands, require for sync:
+;;   Game number, trick number, seat number
+
 (defn handle-event-message [ev-msg]
   (timbre/debug "Received event message:" (:id ev-msg))
   (-handle-event-message ev-msg))
@@ -62,14 +73,14 @@
   [session role game name]
   (let [uid (or (:uid session) (ctl/generate-uid))
         send-fn (partial send-game-event! uid)]
-    (if-let [user-game (ctl/join-game! game uid name send-fn)]
+    (if-let [client-game (ctl/join-game! game uid name send-fn)]
       {:status 200
        :body {:role :host
-              :game user-game}
+              :game client-game}
        :session (assoc session
                        :role role
                        :uid uid
-                       :code (:session/code user-game))}
+                       :code (:server/code client-game))}
       {:status 400
        :body {:error :game-full}})))
 
@@ -102,6 +113,8 @@
         (timbre/info "Guest authentication successful")
         (do-join session :guest game name)))))
 
+;; TODO /api/game -- :get the client-game (on page refresh)
+;; TODO /api/leave -- leave the game (need to update session state)
 (def routes
   [["/api" {:middleware [wrap-format]}
     ["/host" {:post handle-host}]

@@ -15,20 +15,22 @@
 (defn generate-uid []
   (.toString (java.util.UUID/randomUUID)))
 
+;; TODO Replace with API-level spec for payload!
 (defn valid-name? [name]
-  (s/valid? :player/name name))
+  (s/valid? :client/name name))
 
-;; TODO: server-game?
-(defn new-game []
+(defn server-game []
   (assoc (game/game)
          ::code (generate-code)
          ::users {}))
 
+;; TODO: Create a new game when hosting, keep a map of games
+;; (destroy games when hosts disconnect)
 (defn ensure-game!
   "Creates a game unless it exists already, then returns the
    game singleton."
   []
-  (swap! game-atom #(or % (new-game)))
+  (swap! game-atom #(or % (server-game)))
   game-atom)
 
 (defn find-game
@@ -37,30 +39,20 @@
   (when (= code (::code @game-atom))
     game-atom))
 
-(defn game-state [game]
-  (cond
-    (< (count (::users game)) 4)
-    :waiting-for-players
-    
-    :else
-    :ready-to-start))
-
-(defn enrich-peers [user-game users]
+(defn enrich-peers [client-game clients]
   (reduce
    (fn [g [_ {::keys [seat name]}]]
-     (assoc-in g [:player/peers seat :player/name] name))
-   user-game
-   users))
+     (assoc-in g [:player/peers seat :client/name] name))
+   client-game
+   clients))
 
-;; TODO: client-game?
-(defn user-game
-  "Returns the view of the game for a user identified by their uid."
+(defn client-game
+  "Returns the view of the game for a client identified by their uid."
   [game uid]
   (when-let [seat (get-in game [::users uid ::seat])]
     (->
      (game/player-game game seat)
-     (assoc :session/code (::code game)
-            :session/state (game-state game))
+     (assoc :server/code (::code game))
      (enrich-peers (::users game)))))
 
 (defn free-seats
@@ -77,18 +69,21 @@
   {:pre [(vector? event)]}
   (doseq [[uid {::keys [send-fn]}] (::users game)]
     (when send-fn
-      (send-fn (conj event (user-game game uid))))))
+      (send-fn (conj event (client-game game uid))))))
 
+;; TODO: This could be a watcher for a game-atom!
 (defn broadcast-game! [game]
   (broadcast-event! game [:game/update]))
 
+;; TODO: Separate join-game! (for guests) and host-game.
+;; Mark the host so that clients can refer to them.
 (defn join-game!
   "Makes a user join a game.  If they are already playing, does nothing.
-   Returns the user-game of the joined player, or nil when there are no
+   Returns the client-game of the joined player, or nil when there are no
    more free seats in the game."
   [game-atom uid name send-fn]
   (if (some? (get-in @game-atom [::users uid]))
-    (user-game @game-atom uid)
+    (client-game @game-atom uid)
     (let [join (fn [game]
                  (if-let [seat (first (free-seats game))]
                    (assoc-in game [::users uid]
@@ -101,4 +96,4 @@
       (when (some? (get-in @game-atom [::users uid]))
         (timbre/info "User" uid "joined game" (::code game))
         (broadcast-game! game)
-        (user-game game uid)))))
+        (client-game game uid)))))

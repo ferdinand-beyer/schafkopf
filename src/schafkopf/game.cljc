@@ -3,6 +3,7 @@
 ;; schafkopf.game
 ;; schafkopf.player
 (ns schafkopf.game
+  "Minimalist Schafkopf game implementation."
   (:require [clojure.spec.alpha :as s]))
 
 (def suit? #{:acorns :leaves :hearts :bells})
