@@ -1,6 +1,7 @@
 (ns schafkopf.frontend.game.view
   (:require [re-frame.core :as rf]
-            [mui-bien.core :as mui]
+            [mui-bien.core.all :as mui]
+            [mui-bien.core.styles :refer [with-styles]]
             [schafkopf.frontend.game.core :as game]))
 
 (defn card-url [[suit rank]]
@@ -9,7 +10,7 @@
        ".jpg"))
 
 (def card
-  (mui/with-styles
+  (with-styles
     {:root {:width 140
             :height 250
             :display :flex
@@ -26,7 +27,7 @@
 
 ;; TODO: Avatar, hand, tricks, score, total score
 (def peer
-  (mui/with-styles
+  (with-styles
    {:root {}}
    (fn [{:keys [classes seat]}]
      (let [name (rf/subscribe [::game/peer-name seat])]
@@ -104,7 +105,7 @@
      [mui/typography "Raumcode: " [:strong @code]]]))
 
 (def game-screen
-  (mui/with-styles
+  (with-styles
     {:root {:min-height "100vh"}}
 
     (fn [{:keys [classes]}]

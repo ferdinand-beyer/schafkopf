@@ -1,6 +1,6 @@
 (ns schafkopf.frontend.view
   (:require [re-frame.core :as rf]
-            [mui-bien.core :as mui]
+            [mui-bien.core.all :as mui]
             [schafkopf.frontend.auth.view :as auth-view]
             [schafkopf.frontend.game.core :as game]
             [schafkopf.frontend.game.view :as game-view]))

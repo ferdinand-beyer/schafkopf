@@ -1,12 +1,12 @@
 (ns schafkopf.frontend.auth.view
-  (:require [mui-bien.core :as mui]
-            ["@material-ui/core/styles" :as mui-styles]
+  (:require [mui-bien.core.all :as mui]
+            [mui-bien.core.styles :as mui-styles :refer [with-styles]]
             [reagent.core :as r]
             [re-frame.core :as rf]
             [schafkopf.frontend.auth.core :as auth]))
 
 (def actions
-  (mui/with-styles
+  (with-styles
    (fn [theme]
      {:root {:marginTop (.spacing theme 1)
              :display :flex
@@ -76,7 +76,7 @@
          "Spielen"]]])))
 
 (def auth-screen
-  (mui/with-styles
+  (with-styles
    (fn [theme]
      {:root {:minHeight "100vh"
              :backgroundColor (mui-styles/emphasize (.. theme -palette -background -paper))

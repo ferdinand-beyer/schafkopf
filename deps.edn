@@ -22,17 +22,13 @@
     pjstadig/humane-test-output {:mvn/version "0.11.0"}
     ring/ring-devel {:mvn/version "1.9.2"}}}
 
-  :build/cljs
+  :cljs
   {:extra-deps
    {thheller/shadow-cljs {:mvn/version "2.12.5"}
     com.fzakaria/slf4j-timbre {:mvn/version "0.3.21"}
     re-frame/re-frame {:mvn/version "1.2.0"}
     day8.re-frame/http-fx {:mvn/version "0.2.3"}
-    org.clojars.fbeyer/mui-bien {:mvn/version "0.1.0"}}}
+    org.clojars.fbeyer/mui-bien {:mvn/version "0.2.1"}}}
 
   :shadow-cljs
-  {:main-opts ["-m" "shadow.cljs.devtools.cli"]}
-
-  :local
-  {:override-deps
-   {org.clojars.fbeyer/mui-bien {:local/root "../mui-bien"}}}}}
+  {:main-opts ["-m" "shadow.cljs.devtools.cli"]}}}

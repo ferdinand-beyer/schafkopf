@@ -17,11 +17,11 @@ build: build-cljs
 
 .PHONY: build-cljs
 build-cljs:
-	clojure -M:build/cljs:shadow-cljs release app
+	clojure -M:cljs:shadow-cljs release app
 
 .PHONY: repl
 repl:
-	clj -M:dev:local:build/cljs:repl/cider
+	clj -M:dev:cljs:repl/cider
 
 .PHONY: clean
 clean:
