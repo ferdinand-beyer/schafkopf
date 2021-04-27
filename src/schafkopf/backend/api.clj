@@ -8,6 +8,7 @@
             [taoensso.timbre :as timbre]
             [schafkopf.backend.control :as ctl]))
 
+(config/def host-name {:default "Host"})
 (config/def host-password {:secret true})
 
 ;;;; Channel sockets
@@ -72,18 +73,18 @@
       {:status 400
        :body {:error :game-full}})))
 
-(defn handle-authenticate
+(defn handle-host
   [{:keys [body-params session]}]
   (if (= host-password (:password body-params))
     (do
       (timbre/info "Host authentication successful")
-      (do-join session :host (ctl/ensure-game!) "Host"))
+      (do-join session :host (ctl/ensure-game!) host-name))
     (do
       (timbre/info "Host authentication failed (invalid password)")
       {:status 403
        :body {:error :invalid-credentials}})))
 
-(defn handle-guest-join
+(defn handle-join
   [{:keys [body-params session]}]
   (let [{:keys [code name]} body-params
         game (ctl/find-game code)]
@@ -103,7 +104,7 @@
 
 (def routes
   [["/api" {:middleware [wrap-format]}
-    ["/authenticate" {:post handle-authenticate}]
-    ["/join" {:post handle-guest-join}]]
+    ["/host" {:post handle-host}]
+    ["/join" {:post handle-join}]]
    ["/chsk" {:get chsk-ajax-get-or-ws-handshake
              :post chsk-ajax-post}]])

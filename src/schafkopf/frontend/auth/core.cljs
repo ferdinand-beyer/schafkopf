@@ -9,7 +9,7 @@
  (fn [{:keys [db]} [_ password]]
    {:db (assoc db ::authenticating :host)
     :http-xhrio {:method :post
-                 :uri "/api/authenticate"
+                 :uri "/api/host"
                  :params {:password password}
                  :on-success [::host-login-succeeded]
                  :on-failure [::host-login-failed]}}))

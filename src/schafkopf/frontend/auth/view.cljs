@@ -66,6 +66,10 @@
        [actions
         (when @loading?
           [mui/circular-progress {:size 24}])
+        ;; TODO Merge forms, allow hosts to enter their name.
+        #_[mui/form-control-label
+         {:control [mui/switch]
+          :label "Gastgeber"}]
         [mui/button
          {:type :submit
           :color :primary}
