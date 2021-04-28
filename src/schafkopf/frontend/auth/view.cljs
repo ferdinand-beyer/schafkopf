@@ -1,4 +1,5 @@
 (ns schafkopf.frontend.auth.view
+  ;; TODO require MUI components selectively!
   (:require [mui-bien.core.all :as mui]
             [mui-bien.core.styles :as mui-styles :refer [with-styles]]
             [reagent.core :as r]

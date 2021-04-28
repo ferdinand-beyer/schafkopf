@@ -1,5 +1,6 @@
 (ns schafkopf.frontend.game.view
   (:require [re-frame.core :as rf]
+            ;; TODO require MUI components selectively!
             [mui-bien.core.all :as mui]
             [mui-bien.core.styles :refer [with-styles]]
             [schafkopf.frontend.game.core :as game]))

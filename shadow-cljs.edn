@@ -11,10 +11,7 @@
    {:base {}
     :reagent {:entries [reagent.core re-frame.core]
               :depends-on #{:base}}
-    ; FIXME this defeats the purpose of dead code elimination :)
-    :mui {:entries [mui-bien.core.all
-                    mui-bien.core.styles
-                    mui-bien.interop]
+    :mui {:entries [schafkopf.frontend.view.mui]
           :depends-on #{:base :reagent}}
     :main {:init-fn schafkopf.frontend.core/init!
            :depends-on #{:base :mui :reagent}}}}
