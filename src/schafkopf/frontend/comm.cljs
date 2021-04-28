@@ -71,7 +71,7 @@
 
 (defn connect-channel-socket! []
   (let [{:keys [ch-recv] :as chsk-map}
-        (sente/make-channel-socket!
+        (sente/make-channel-socket-client!
          "/chsk"
          anti-forgery-token
          {:packer (sente-transit/get-transit-packer)
@@ -80,8 +80,30 @@
         stop-router-fn (sente/start-client-chsk-router! ch-recv handle-event!)]
     (replace-channel-socket! (assoc chsk-map :stop-router-fn stop-router-fn))))
 
+(defn send! [event dispatch-reply]
+  (if-let [send-fn (:send-fn @channel-socket)]
+    (do
+      (timbre/info "Sending socket event:" event)
+      (let [reply-fn
+            (when dispatch-reply
+              (fn [reply]
+                (if (sente/cb-success? reply)
+                  (rf/dispatch (conj dispatch-reply reply))
+                  (timbre/warn "Failed receiving reply to:" event
+                               "-" reply))))]
+        (send-fn event 5000 reply-fn)))
+    ;; Not connected - only in dev when the namespace is reloaded?
+    (timbre/warn "Cannot send event:" event "- chsk:" @channel-socket)))
+
 (rf/reg-fx
  :chsk/connect
  (fn [_]
    (timbre/info "Connecting channel socket")
    (connect-channel-socket!)))
+
+(rf/reg-fx
+ :chsk/send
+ (fn [msg]
+   (if (map? msg)
+     (send! (:event msg) (:on-reply msg))
+     (send! msg nil))))

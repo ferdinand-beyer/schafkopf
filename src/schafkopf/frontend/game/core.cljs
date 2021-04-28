@@ -3,16 +3,25 @@
             [schafkopf.game :as game]
             [schafkopf.protocol :as p]))
 
+;;;; Server events
+
+(rf/reg-event-db
+ :game/update
+ (fn [db [_ game]]
+   (assoc db ::game game)))
+
+;;;; UI events
+
 (rf/reg-event-fx
  ::init
  (fn [{:keys [db]} [_ game]]
    {:db (assoc db ::game game)
     :chsk/connect nil}))
 
-(rf/reg-event-db
- :game/update
- (fn [db [_ game]]
-   (assoc db ::game game)))
+(rf/reg-event-fx
+ ::start
+ (fn [_ _]
+   {:chsk/send [:game/start]}))
 
 ;;;; Subscriptions
 

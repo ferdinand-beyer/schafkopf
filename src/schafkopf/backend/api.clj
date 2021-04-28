@@ -22,11 +22,11 @@
 ;;; TODO: Make this a mount state?
 (let [{:keys [ch-recv send-fn connected-uids
               ajax-post-fn ajax-get-or-ws-handshake-fn]}
-      (sente/make-channel-socket!
+      (sente/make-channel-socket-server!
        (get-sch-adapter)
        {:authorized?-fn channel-socket-authorized?
         :packer (sente-transit/get-transit-packer)})]
-
+  
   (def chsk-ajax-post ajax-post-fn)
   (def chsk-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
   (def ch-recv ch-recv)
@@ -39,9 +39,14 @@
 (defmulti -handle-event-message :id)
 
 (defmethod -handle-event-message :default [ev-msg]
-  (timbre/debug "Unhandled message: " (:id ev-msg)))
+  (timbre/debug "Unhandled message:" (:id ev-msg)))
 
-;; TODO :game/start
+(defmethod -handle-event-message :chsk/uidport-open [_])
+(defmethod -handle-event-message :chsk/ws-ping [_])
+
+(defmethod -handle-event-message :game/start [{:keys [event ?data uid]}]
+  (timbre/info "Start:" event ?data uid))
+
 ;; TODO :game/reset
 ;; TODO :game/end
 ;; TODO :client/play (a card)
@@ -53,7 +58,7 @@
 ;;   Game number, trick number, seat number
 
 (defn handle-event-message [ev-msg]
-  (timbre/debug "Received event message:" (:id ev-msg))
+  ;; XXX Dispatch in dedicated thread?
   (-handle-event-message ev-msg))
 
 (mount/defstate event-router

@@ -1,5 +1,6 @@
 (ns schafkopf.backend.control
   (:require [clojure.spec.alpha :as s]
+            [mount.core :as mount]
             [taoensso.timbre :as timbre]
             [schafkopf.game :as game]))
 
@@ -7,7 +8,8 @@
 
 (s/def ::client (s/keys :req-un [::uid]))
 
-(def game-atom (atom nil))
+(mount/defstate game-atom
+  :start (atom nil))
 
 (defn generate-code []
   (format "%04d" (rand-int 10000)))
