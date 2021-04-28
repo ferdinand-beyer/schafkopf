@@ -31,12 +31,15 @@
   (with-styles
    {:root {}}
    (fn [{:keys [classes seat]}]
-     (let [name (rf/subscribe [::game/peer-name seat])]
+     (let [name (rf/subscribe [::game/peer-name seat])
+           hand-count (rf/subscribe [::game/peer-hand-count seat])]
        (fn [_]
          [mui/card
           {:classes {:root (:root classes)}}
           (if (some? @name)
-            [mui/typography {:variant :h6} @name]
+            [:<>
+             [mui/typography {:variant :h6} @name]
+             [mui/typography "Karten: " @hand-count]]
             [mui/typography "(Unbesetzt)"])])))))
 
 ;; TODO just for demo :)
@@ -89,7 +92,8 @@
       can-start?
       [mui/button
        {:variant :contained
-        :color :primary}
+        :color :primary
+        :on-click #(rf/dispatch [::game/start])}
        "Spiel starten"]
 
       :else

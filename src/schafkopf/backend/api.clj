@@ -19,7 +19,7 @@
   [req]
   (some? (get-in req [:session :uid])))
 
-(let [{:keys [ch-recv send-fn connected-uids
+(let [{:keys [ch-recv send-fn
               ajax-post-fn ajax-get-or-ws-handshake-fn]}
       (sente/make-channel-socket-server!
        (get-sch-adapter)
@@ -29,9 +29,7 @@
   (def chsk-ajax-post ajax-post-fn)
   (def chsk-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
   (def ch-recv ch-recv)
-  (def chsk-send! send-fn)
-  ;; TODO: Notify control when a uid disconnects
-  (def connected-uids connected-uids))
+  (def chsk-send! send-fn))
 
 ;;;; Message handlers
 
@@ -40,11 +38,17 @@
 (defmethod -handle-event-message :default [ev-msg]
   (timbre/debug "Unhandled message:" (:id ev-msg)))
 
-(defmethod -handle-event-message :chsk/uidport-open [_])
+(defmethod -handle-event-message :chsk/uidport-open [{:keys [uid]}]
+  (timbre/info "Client connected:" uid))
+
+(defmethod -handle-event-message :chsk/uidport-close [{:keys [uid]}]
+  (timbre/info "Client disconnected:" uid))
+
 (defmethod -handle-event-message :chsk/ws-ping [_])
 
-(defmethod -handle-event-message :game/start [{:keys [event ?data uid]}]
-  (timbre/info "Start:" event ?data uid))
+(defmethod -handle-event-message :game/start [{:keys [?data uid]}]
+  (when-let [game (ctl/find-game ?data)]
+    (ctl/start-game! game uid)))
 
 ;; TODO :game/reset
 ;; TODO :game/end

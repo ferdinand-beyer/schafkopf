@@ -20,8 +20,9 @@
 
 (rf/reg-event-fx
  ::start
- (fn [_ _]
-   {:chsk/send [:game/start]}))
+ (fn [{:keys [db]} _]
+   (let [code (get-in db [::game :server/code])]
+     {:chsk/send [:game/start code]})))
 
 ;;;; Subscriptions
 
@@ -102,3 +103,9 @@
  subscribe-peer
  (fn [peer _]
    (:client/name peer)))
+
+(rf/reg-sub
+ ::peer-hand-count
+ subscribe-peer
+ (fn [peer _]
+   (game/hand-count peer)))
