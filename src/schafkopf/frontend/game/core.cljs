@@ -56,6 +56,12 @@
    (:server/code game)))
 
 (rf/reg-sub
+ ::hand
+ :<- [::game]
+ (fn [game _]
+   (:player/hand game)))
+
+(rf/reg-sub
  ::seat
  :<- [::game]
  (fn [game _]

@@ -5,26 +5,70 @@
             [mui-bien.core.styles :refer [with-styles]]
             [schafkopf.frontend.game.core :as game]))
 
-(defn card-url [[suit rank]]
-  (str "/assets/img/decks/saxonian/" (name suit) "-"
-       (if (keyword? rank) (name rank) rank)
-       ".jpg"))
+(def suit-names {:acorns "Eichel"
+                 :leaves "Gras"
+                 :hearts "Herz"
+                 :bells "Schellen"})
 
-(def card
+(def rank-names {:unter "Unter"
+                 :ober "Ober"
+                 :king "König"
+                 :deuce "Daus"})
+
+(defn card-key [[rank suit]]
+  (str (name suit) "-" (if (keyword? rank) (name rank) rank)))
+
+(defn card-name [[rank suit]]
+  (str (get suit-names suit) " " (get rank-names rank rank)))
+
+(defn card-url [card]
+  (str "/assets/img/decks/saxonian/" (card-key card) ".jpg"))
+
+;; Separate component since with-styles screws up clojure types,
+;; such as the 'card' prop which is a vector of keywords.
+(def -card
   (with-styles
-    {:root {:width 140
+    {:root {:border-radius 12
+            :width 140
             :height 250
-            :display :flex
-            :border-radius 12
-            :background-size :cover}}
-   (fn [{:keys [classes card elevation children]
-         :or {card [:hearts :king]
-              elevation 1}}]
+            :background-size :cover
+            :position :relative}
+     :fill {:width "100%"
+            :height "100%"}}
+   (fn [{:keys [classes name url elevation children]
+         :or {elevation 1}}]
      [mui/card
       {:elevation elevation
        :classes {:root (:root classes)}
-       :style {:background-image (str "url('" (card-url card) "')")}}
-      children])))
+       :style {:background-image (str "url('" url "')")}}
+      [mui/tooltip
+       {:title name
+        :arrow true}
+       ;; Wrapper since tooltips won't work on disabled buttons.
+       [:div {:class (:fill classes)}
+        ;; TODO: Pass 'disabled' and 'on-click' down to the button.
+        [mui/button-base
+         {:class (:fill classes)
+          :focus-ripple true}
+         children]]]])))
+
+(defn card [{:keys [card] :as props}]
+  (let [name (card-name card)
+        url (card-url card)]
+    [-card (merge props {:name name
+                              :url url})]))
+
+(def hand
+  (with-styles
+    {:root {:display :flex
+            :flex-direction :row}}
+    (fn [{:keys [classes]}]
+      (let [hand (rf/subscribe [::game/hand])]
+        (fn [_]
+          [:div {:class (:root classes)}
+           (for [card' @hand]
+             ^{:key (card-key card')}
+             [card {:card card'}])])))))
 
 ;; TODO: Avatar, hand, tricks, score, total score
 (def peer
@@ -168,7 +212,7 @@
          [self]]
         [mui/grid
          {:item true}
-         [card-deco]]
+         [hand]]
         [mui/grid
          {:item true
           :xs 2}
