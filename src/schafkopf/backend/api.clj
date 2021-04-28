@@ -9,7 +9,7 @@
             [schafkopf.backend.control :as ctl]))
 
 (config/def host-name {:default "Host"})
-(config/def host-password {:secret true})
+(config/def host-password {:required true :secret true})
 
 ;;;; Channel sockets
 
@@ -19,7 +19,6 @@
   [req]
   (some? (get-in req [:session :uid])))
 
-;;; TODO: Make this a mount state?
 (let [{:keys [ch-recv send-fn connected-uids
               ajax-post-fn ajax-get-or-ws-handshake-fn]}
       (sente/make-channel-socket-server!
@@ -72,7 +71,7 @@
 ;;; Ring handlers
 
 ;; TODO: Move more of this logic to control.
-;; Guests 
+;; Guests join, hosts _create_ games.
 (defn do-join
   "Lets the connected user join a game, and returns a ring response."
   [session role game name]
