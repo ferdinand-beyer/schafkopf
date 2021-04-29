@@ -146,10 +146,10 @@
     (when (progressed? server-game seqno)
       (timbre/info "User" uid "started game" (::code server-game)))))
 
-;; TODO - check not scoring
 (defn can-play? [server-game seat]
   (let [game (::game server-game)]
-    (game/player-turn? game seat)))
+    (and (not (game/trick-complete? game))
+         (game/player-turn? game seat))))
 
 ;; TODO - ensure card in hand
 (defn play [server-game uid seqno card]

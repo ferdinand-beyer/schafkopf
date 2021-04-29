@@ -13,6 +13,8 @@
 (s/def :game/deck (s/coll-of :game/card :count 32 :distinct true))
 
 (s/def :player/hand (s/coll-of :game/card :max-count 8 :distinct true :into #{}))
+
+;; XXX do we need to record who played the first card?
 (s/def :player/trick (s/coll-of :game/card :kind vector? :count 4 :distinct true))
 
 ;; Uncomplete trick
@@ -199,29 +201,36 @@
             :game/active-seat forehand
             :game/players players))))
 
+(defn trick-complete?
+  [game]
+  (= (count (:game/active-trick game)) 4))
+
 (defn player-turn?
-  ([player-game] (player-turn? player-game (:player/seat player-game)))
-  ([game seat] (= seat (:game/active-seat game))))
+  [game seat]
+  (= seat (:game/active-seat game)))
+
+(defn has-card?
+  [game seat card]
+  (-> (get-in game [:game/players seat :player/hand])
+      (contains? card)))
 
 (s/fdef play-card
   :args (s/cat :game :schafkopf/game
                :card :game/card)
   :ret :schafkopf/game)
 
-;; TODO only allow when the active trick is not complete
-;; (Have a can-plan?)
 (defn play-card
   "Updates the game when the current player plays a card from their hand."
   [game card]
-  {:pre [(-> (get-in game [:game/players
-                           (:game/active-seat game)
-                           :player/hand])
-             (contains? card))]}
-  (let [seat (:game/active-seat game)]
-    (-> game
-        (update :game/active-trick conj card)
-        (update-in [:game/players seat :player/hand] disj card)
-        (update :game/active-seat next-seat))))
+  {:pre [(not (trick-complete? game))
+         (has-card? game (:game/active-seat game) card)]}
+  (let [seat (:game/active-seat game)
+        game (-> game
+                 (update :game/active-trick conj card)
+                 (update-in [:game/players seat :player/hand] disj card))]
+    (if (trick-complete? game)
+      (dissoc game :game/active-seat)
+      (update game :game/active-seat next-seat))))
 
 (s/fdef take-trick
   :args (s/cat :game :schafkopf/game
@@ -231,9 +240,14 @@
 (defn take-trick
   "Updates the game when the given player takes the current trick."
   [game seat]
-  {:pre [(= 4 (count (:game/active-trick game)))]}
-  ;; TODO
-  game)
+  {:pre [(trick-complete? game)
+         (nil? (:game/active-seat game))]}
+  (let [trick (:game/active-trick game)]
+    (-> game
+        (assoc :game/active-trick []
+               :game/prev-trick trick
+               :game/active-seat seat)
+        (update-in [:game/players seat :player/tricks] conj trick))))
 
 (defn count-points [cards]
   (->> cards flatten (keep points) (reduce +)))

@@ -68,12 +68,6 @@
    (:game/active-trick game)))
 
 (rf/reg-sub
- ::can-play?
- :<- [::game]
- (fn [game _]
-   (game/player-turn? game)))
-
-(rf/reg-sub
  ::hand
  :<- [::game]
  (fn [game _]
@@ -84,6 +78,13 @@
  :<- [::game]
  (fn [game _]
    (:player/seat game)))
+
+(rf/reg-sub
+ ::can-play?
+ :<- [::game]
+ (fn [game _]
+   (and (game/player-turn? game (:player/seat game))
+        (not (game/trick-complete? game)))))
 
 (defn rotate-seat [seat offset]
   (rem (+ seat offset) 4))
