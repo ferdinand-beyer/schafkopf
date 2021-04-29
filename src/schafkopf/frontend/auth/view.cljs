@@ -1,7 +1,11 @@
 (ns schafkopf.frontend.auth.view
-  ;; TODO require MUI components selectively!
-  (:require [mui-bien.core.all :as mui]
+  (:require [mui-bien.core.button :refer [button]]
+            [mui-bien.core.grid :refer [grid]]
+            [mui-bien.core.circular-progress :refer [circular-progress]]
+            [mui-bien.core.paper :refer [paper]]
             [mui-bien.core.styles :as mui-styles :refer [with-styles]]
+            [mui-bien.core.text-field :refer [text-field]]
+            [mui-bien.core.typography :refer [typography]]
             [reagent.core :as r]
             [re-frame.core :as rf]
             [schafkopf.frontend.auth.core :as auth]))
@@ -24,7 +28,7 @@
        {:on-submit (fn [e]
                      (.preventDefault e)
                      (rf/dispatch [::auth/host-login @password]))}
-       [mui/text-field
+       [text-field
         {:label "Kennwort"
          :type :password
          :full-width true
@@ -35,8 +39,8 @@
          :on-change #(reset! password (.. % -target -value))}]
        [actions
         (when @loading?
-          [mui/circular-progress {:size 24}])
-        [mui/button
+          [circular-progress {:size 24}])
+        [button
          {:type :submit
           :color :primary
           :disabled @loading?}
@@ -52,26 +56,28 @@
        {:on-submit (fn [e]
                      (.preventDefault e)
                      (rf/dispatch [::auth/guest-join @code @name]))}
-       [mui/text-field {:label "Code"
-                        :full-width true
-                        :value @code
-                        :disabled @loading?
-                        :error (some? @error-text)
-                        :helper-text @error-text
-                        :on-change #(reset! code (.. % -target -value))}]
-       [mui/text-field {:label "Name"
-                        :full-width true
-                        :value @name
-                        :disabled @loading?
-                        :on-change #(reset! name (.. % -target -value))}]
+       [text-field
+        {:label "Code"
+         :full-width true
+         :value @code
+         :disabled @loading?
+         :error (some? @error-text)
+         :helper-text @error-text
+         :on-change #(reset! code (.. % -target -value))}]
+       [text-field
+        {:label "Name"
+         :full-width true
+         :value @name
+         :disabled @loading?
+         :on-change #(reset! name (.. % -target -value))}]
        [actions
         (when @loading?
-          [mui/circular-progress {:size 24}])
+          [circular-progress {:size 24}])
         ;; TODO Merge forms, allow hosts to enter their name.
         #_[mui/form-control-label
          {:control [mui/switch]
           :label "Gastgeber"}]
-        [mui/button
+        [button
          {:type :submit
           :color :primary}
          "Spielen"]]])))
@@ -80,16 +86,20 @@
   (with-styles
    (fn [theme]
      {:root {:minHeight "100vh"
-             :backgroundColor (mui-styles/emphasize (.. theme -palette -background -paper))
-             :display :flex
-             :justifyContent :center
-             :alignItems :center}
+             :backgroundColor (mui-styles/emphasize (.. theme -palette -background -paper))}
       :paper {:padding (.spacing theme 2)}})
    (fn [{:keys [classes]}]
      [:div {:class (:root classes)}
-      [mui/paper
-       {:classes {:root (:paper classes)}}
-       [mui/typography {:variant :h6} "Schafkopf"]
-       [guest-form]
-       [mui/typography "Für Gastgeber:"]
-       [host-form]]])))
+      [grid
+       {:classes {:root (:root classes)}
+        :container true
+        :justify :center
+        :align-items :center}
+       [grid
+        {:item true}
+        [paper
+         {:classes {:root (:paper classes)}}
+         [typography {:variant :h6} "Schafkopf"]
+         [guest-form]
+         [typography "Für Gastgeber:"]
+         [host-form]]]]])))
