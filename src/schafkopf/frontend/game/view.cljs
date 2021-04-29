@@ -35,8 +35,11 @@
             :position :relative}
      :fill {:width "100%"
             :height "100%"}}
-   (fn [{:keys [classes name url elevation children]
-         :or {elevation 1}}]
+   (fn [{:keys [classes name url elevation
+                disabled onClick
+                children]
+         :or {elevation 1
+              disabled true}}]
      [mui/card
       {:elevation elevation
        :classes {:root (:root classes)}
@@ -46,29 +49,35 @@
         :arrow true}
        ;; Wrapper since tooltips won't work on disabled buttons.
        [:div {:class (:fill classes)}
-        ;; TODO: Pass 'disabled' and 'on-click' down to the button.
         [mui/button-base
          {:class (:fill classes)
-          :focus-ripple true}
+          :focus-ripple true
+          :disabled disabled
+          :on-click onClick}
          children]]]])))
 
 (defn card [{:keys [card] :as props}]
   (let [name (card-name card)
         url (card-url card)]
     [-card (merge props {:name name
-                              :url url})]))
+                         :url url})]))
 
 (def hand
   (with-styles
     {:root {:display :flex
             :flex-direction :row}}
     (fn [{:keys [classes]}]
-      (let [hand (rf/subscribe [::game/hand])]
+      (let [hand (rf/subscribe [::game/hand])
+            can-play? (rf/subscribe [::game/can-play?])]
         (fn [_]
-          [:div {:class (:root classes)}
-           (for [card' @hand]
-             ^{:key (card-key card')}
-             [card {:card card'}])])))))
+          [:div
+           {:class (:root classes)}
+           (doall
+            (for [card' @hand]
+              ^{:key (card-key card')}
+              [card {:card card'
+                     :disabled (not @can-play?)
+                     :on-click #(rf/dispatch [::game/play card'])}]))])))))
 
 ;; TODO: Avatar, hand, tricks, score, total score
 (def peer
@@ -126,12 +135,33 @@
     ;; a smart subscription.
     [peer {:seat @seat}]))
 
+(def -trick
+  (with-styles
+    {}
+    (fn [{:keys [classes children]}]
+      [mui/grid
+       {:container true
+        :direction :row}
+       (for [[i card] (map vector (range) children)]
+         ^{:key i}
+         [mui/grid {:item true} card])])))
+
+(defn trick [{:keys [trick]}]
+  [-trick
+   (for [card' trick]
+     ^{:key (card-key card')}
+     [card {:card card'}])])
+
+(defn active-trick []
+  (let [trick' (rf/subscribe [::game/active-trick])]
+    [trick {:trick @trick'}]))
+
 (defn center []
   (let [started? @(rf/subscribe [::game/started?])
         can-start? @(rf/subscribe [::game/can-start?])]
     (cond
       started?
-      [:p "(Active game)"]
+      [active-trick]
 
       can-start?
       [mui/button

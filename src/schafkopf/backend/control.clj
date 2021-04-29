@@ -69,6 +69,7 @@
     (when send-fn
       (send-fn (conj event (client-game server-game uid))))))
 
+;; TODO: Will this fire if old == new?
 (defn- broadcaster-watch
   "Watches a game ref and broadcasts changes to all clients."
   [_key _atom _old new-server-game]
@@ -109,8 +110,14 @@
       (timbre/info "User" uid "joined game" (::code server-game))
       (client-game server-game uid))))
 
-(defn in-sync? [server-game seqno]
+(defn- in-sync? [server-game seqno]
   (= seqno (::seqno server-game)))
+
+(defn- progress [server-game]
+  (update server-game ::seqno inc))
+
+(defn- progressed? [server-game seqno]
+  (= (inc seqno) (::seqno server-game)))
 
 ;; TODO: annotate what command was ignored?
 (defn- unchanged [server-game]
@@ -130,11 +137,31 @@
                   #(-> %
                        (game/start dealer-seat)
                        (game/deal deck)))
-          (update ::seqno inc)))
+          (progress)))
     (unchanged server-game)))
 
 ;; TODO - verify uid is a player?
 (defn start-game! [game-atom uid seqno]
   (let [server-game (swap! game-atom start-game seqno)]
-    (when (= (inc seqno) (::seqno server-game))
-      (timbre/info "User" uid "has started game" (::code server-game)))))
+    (when (progressed? server-game seqno)
+      (timbre/info "User" uid "started game" (::code server-game)))))
+
+;; TODO - check not scoring
+(defn can-play? [server-game seat]
+  (let [game (::game server-game)]
+    (game/player-turn? game seat)))
+
+;; TODO - ensure card in hand
+(defn play [server-game uid seqno card]
+  (let [seat (get-in server-game [::clients uid ::seat])]
+    (if (and (in-sync? server-game seqno)
+             (can-play? server-game seat))
+      (-> server-game
+          (update ::game game/play-card card)
+          (progress))
+      (unchanged server-game))))
+
+(defn play! [game-atom uid seqno card]
+  (let [server-game (swap! game-atom play uid seqno card)]
+    (when (progressed? server-game seqno)
+      (timbre/info "User" uid "played card" card))))

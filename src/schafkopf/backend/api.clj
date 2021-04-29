@@ -51,14 +51,19 @@
 
 (defmethod -handle-event-message :chsk/ws-ping [_])
 
-(defmethod -handle-event-message :game/start [{:keys [?data uid]}]
+(defmethod -handle-event-message :game/start [{:keys [uid ?data]}]
   (when-let [[code seqno] ?data]
     (when-let [game (ctl/find-game code)]
       (ctl/start-game! game uid seqno))))
 
+(defmethod -handle-event-message :client/play [{:keys [uid ?data]}]
+  (when-let [[code seqno card] ?data]
+    (when-let [game (ctl/find-game code)]
+      (ctl/play! game uid seqno card))))
+
 ;; TODO :game/reset
 ;; TODO :game/end
-;; TODO :client/play (a card)
+
 ;; TODO :client/take (the trick)
 ;; TODO :client/score
 ;; TODO :client/ready

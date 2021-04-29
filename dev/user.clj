@@ -65,3 +65,30 @@
 
 (defn server-game []
   @ctl/game-atom)
+
+(defn seqno []
+  (::ctl/seqno (server-game)))
+
+(defn on-seat [seat]
+  (->> (server-game)
+       ::ctl/clients
+       vals
+       (filter #(= seat (::ctl/seat %)))
+       first))
+
+(defn active-client []
+  (on-seat (get-in (server-game) [::ctl/game :game/active-seat])))
+
+(defn active-uid []
+  (::ctl/uid (active-client)))
+
+(defn client-game [uid]
+  (ctl/client-game (server-game) uid))
+
+(defn play
+  ([] (play (active-uid)))
+  ([uid]
+   (let [card (first (:player/hand (client-game uid)))]
+     (play uid card)))
+  ([uid card]
+   (ctl/play! ctl/game-atom uid (seqno) card)))

@@ -199,11 +199,17 @@
             :game/active-seat forehand
             :game/players players))))
 
+(defn player-turn?
+  ([player-game] (player-turn? player-game (:player/seat player-game)))
+  ([game seat] (= seat (:game/active-seat game))))
+
 (s/fdef play-card
   :args (s/cat :game :schafkopf/game
                :card :game/card)
   :ret :schafkopf/game)
 
+;; TODO only allow when the active trick is not complete
+;; (Have a can-plan?)
 (defn play-card
   "Updates the game when the current player plays a card from their hand."
   [game card]

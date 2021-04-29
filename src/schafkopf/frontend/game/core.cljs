@@ -24,6 +24,12 @@
    (let [{:server/keys [code seqno]} (::game db)]
      {:chsk/send [:game/start [code seqno]]})))
 
+(rf/reg-event-fx
+ ::play
+ (fn [{:keys [db]} [_ card]]
+   (let [{:server/keys [code seqno]} (::game db)]
+     {:chsk/send [:client/play [code seqno card]]})))
+
 ;;;; Subscriptions
 
 (rf/reg-sub
@@ -54,6 +60,18 @@
  :<- [::game]
  (fn [game _]
    (:server/code game)))
+
+(rf/reg-sub
+ ::active-trick
+ :<- [::game]
+ (fn [game _]
+   (:game/active-trick game)))
+
+(rf/reg-sub
+ ::can-play?
+ :<- [::game]
+ (fn [game _]
+   (game/player-turn? game)))
 
 (rf/reg-sub
  ::hand
