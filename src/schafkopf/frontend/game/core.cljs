@@ -170,6 +170,12 @@
  (fn [peer _]
    (game/trick-count peer)))
 
+(rf/reg-sub
+ ::peer-points
+ subscribe-peer
+ (fn [peer _]
+   (:player/points peer)))
+
 ;;;; Action subscriptions
 
 (rf/reg-sub

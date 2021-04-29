@@ -69,11 +69,11 @@
     (when send-fn
       (send-fn (conj event (client-game server-game uid))))))
 
-;; TODO: Will this fire if old == new?
 (defn- broadcaster-watch
   "Watches a game ref and broadcasts changes to all clients."
-  [_key _atom _old new-server-game]
-  (broadcast-event! new-server-game [:game/update]))
+  [_key _atom old-server-game new-server-game]
+  (when (not= old-server-game new-server-game)
+    (broadcast-event! new-server-game [:game/update])))
 
 (mount/defstate broadcaster
   :start (add-watch game-atom ::broadcaster broadcaster-watch)
@@ -170,14 +170,17 @@
   (let [game (::game server-game)]
     (game/trick-complete? game)))
 
-;; TODO: Auto-summarize when done
 (defn take-trick [server-game uid seqno]
   (let [seat (get-in server-game [::clients uid ::seat])]
     (if (and (in-sync? server-game seqno)
              (can-take? server-game))
-      (-> server-game
-          (update ::game game/take-trick seat)
-          (progress))
+      (let [server-game (update server-game ::game game/take-trick seat)
+            game (::game server-game)]
+        (cond-> server-game
+          (game/all-taken? game)
+          (update ::game game/summarize)
+
+          :finally (progress)))
       (unchanged server-game))))
 
 (defn take! [game-atom uid seqno]

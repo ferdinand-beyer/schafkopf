@@ -88,7 +88,8 @@
            dealer? (rf/subscribe [::game/peer-dealer? seat])
            active? (rf/subscribe [::game/peer-active? seat])
            hand-count (rf/subscribe [::game/peer-hand-count seat])
-           trick-count (rf/subscribe [::game/peer-trick-count seat])]
+           trick-count (rf/subscribe [::game/peer-trick-count seat])
+           points (rf/subscribe [::game/peer-points seat])]
        (fn [_]
          [mui/card
           {:classes {:root (:root classes)}}
@@ -100,7 +101,9 @@
              (when @active?
                [mui/typography "An der Reihe"])
              [mui/typography "Karten: " @hand-count]
-             [mui/typography "Stiche: " @trick-count]]
+             [mui/typography "Stiche: " @trick-count]
+             (when @points
+               [mui/typography "Punkte: " @points])]
             [mui/typography "(Unbesetzt)"])])))))
 
 ;; TODO just for demo :)
