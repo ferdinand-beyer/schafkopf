@@ -22,6 +22,7 @@
 ;; TODO: Unique game-id, use code only for joining
 (defn server-game []
   {::code (generate-code)
+   ::seqno 0
    ::game (game/game)
    ::clients {}})
 
@@ -43,7 +44,7 @@
   (when (= code (::code @game-atom))
     game-atom))
 
-(defn- enrich-peers [client-game clients]
+(defn- populate-peers [client-game clients]
   (reduce
    (fn [g [_ {::keys [seat name]}]]
      (assoc-in g [:player/peers seat :client/name] name))
@@ -56,8 +57,9 @@
   (when-let [seat (get-in server-game [::clients uid ::seat])]
     (->
      (game/player-game (::game server-game) seat)
-     (assoc :server/code (::code server-game))
-     (enrich-peers (::clients server-game)))))
+     (assoc :server/code (::code server-game)
+            :server/seqno (::seqno server-game))
+     (populate-peers (::clients server-game)))))
 
 (defn broadcast-event!
   "Sends an event to all connected clients."
@@ -67,12 +69,13 @@
     (when send-fn
       (send-fn (conj event (client-game server-game uid))))))
 
-(defn- game-watch
+(defn- broadcaster-watch
+  "Watches a game ref and broadcasts changes to all clients."
   [_key _atom _old new-server-game]
   (broadcast-event! new-server-game [:game/update]))
 
 (mount/defstate broadcaster
-  :start (add-watch game-atom ::broadcaster game-watch)
+  :start (add-watch game-atom ::broadcaster broadcaster-watch)
   :stop (remove-watch game-atom ::broadcaster))
 
 (defn free-seats
@@ -92,35 +95,46 @@
   [game-atom uid name send-fn]
   (let [join (fn [server-game]
                (let [seat (first (free-seats server-game))]
-                 (if (and (some? seat)
-                          (nil? (get-in server-game [::clients uid])))
-                   (assoc-in server-game [::clients uid]
-                             {::uid uid
-                              ::send-fn send-fn
-                              ::name name
-                              ::seat seat})
-                   server-game)))
+                 (cond-> server-game
+                   (and (some? seat)
+                        (nil? (get-in server-game [::clients uid])))
+                   (-> (assoc-in [::clients uid]
+                                 {::uid uid
+                                  ::send-fn send-fn
+                                  ::name name
+                                  ::seat seat})
+                       (update ::seqno inc)))))
         server-game (swap! game-atom join)]
     (when (some? (get-in server-game [::clients uid]))
       (timbre/info "User" uid "joined game" (::code server-game))
       (client-game server-game uid))))
 
+(defn in-sync? [server-game seqno]
+  (= seqno (::seqno server-game)))
+
+;; TODO: annotate what command was ignored?
+(defn- unchanged [server-game]
+  server-game)
+
 (defn can-start? [server-game]
   (and (= 4 (count (::clients server-game)))
        (not (game/started? (::game server-game)))))
 
-(defn start-game [server-game]
-  (if (can-start? server-game)
+(defn start-game [server-game seqno]
+  (if (and (in-sync? server-game seqno)
+           (can-start? server-game))
     (let [dealer-seat (game/rand-seat)
           deck (game/shuffled-deck)]
-      (update server-game ::game
-              #(-> %
-                   (game/start dealer-seat)
-                   (game/deal deck))))
-    server-game))
+      (-> server-game
+          (update ::game
+                  #(-> %
+                       (game/start dealer-seat)
+                       (game/deal deck)))
+          (update ::seqno inc)))
+    (unchanged server-game)))
 
-(defn start-game! [game-atom uid]
-  (let [server-game (swap! game-atom start-game)
-        game (::game server-game)]
-    (when (game/started? game)
+;; TODO - verify uid is a player?
+(defn start-game! [game-atom uid seqno]
+  (let [server-game (swap! game-atom start-game seqno)]
+    (when (= (inc seqno) (::seqno server-game))
       (timbre/info "User" uid "has started game" (::code server-game)))))

@@ -32,6 +32,10 @@
   (def ch-recv ch-recv)
   (def chsk-send! send-fn))
 
+(defn send-game-event! [uid event]
+  (timbre/debug "Sending game event to user" uid)
+  (chsk-send! uid event))
+
 ;;;; Message handlers
 
 (defmulti -handle-event-message :id)
@@ -48,8 +52,9 @@
 (defmethod -handle-event-message :chsk/ws-ping [_])
 
 (defmethod -handle-event-message :game/start [{:keys [?data uid]}]
-  (when-let [game (ctl/find-game ?data)]
-    (ctl/start-game! game uid)))
+  (when-let [[code seqno] ?data]
+    (when-let [game (ctl/find-game code)]
+      (ctl/start-game! game uid seqno))))
 
 ;; TODO :game/reset
 ;; TODO :game/end
@@ -58,20 +63,15 @@
 ;; TODO :client/score
 ;; TODO :client/ready
 ;; TODO :client/undo
-;; TODO For client commands, require for sync:
-;;   Game number, trick number, seat number
 
-(defn handle-event-message [ev-msg]
+(defn handle-event-message [{:as ev-msg :keys [uid event]}]
+  (timbre/trace "Received event:" event " - uid:" uid)
   ;; XXX Dispatch in dedicated thread?
   (-handle-event-message ev-msg))
 
 (mount/defstate event-router
   :start (sente/start-server-chsk-router! ch-recv handle-event-message)
   :stop (event-router))
-
-(defn send-game-event! [uid event]
-  (timbre/debug "Sending game event to user" uid)
-  (chsk-send! uid event))
 
 ;;; Ring handlers
 

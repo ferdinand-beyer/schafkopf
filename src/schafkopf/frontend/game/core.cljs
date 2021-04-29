@@ -21,8 +21,8 @@
 (rf/reg-event-fx
  ::start
  (fn [{:keys [db]} _]
-   (let [code (get-in db [::game :server/code])]
-     {:chsk/send [:game/start code]})))
+   (let [{:server/keys [code seqno]} (::game db)]
+     {:chsk/send [:game/start [code seqno]]})))
 
 ;;;; Subscriptions
 

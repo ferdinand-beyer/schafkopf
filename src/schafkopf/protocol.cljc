@@ -15,6 +15,10 @@
             [schafkopf.game :as game]))
 
 (s/def :server/code (s/and string? #(<= 4 (count %) 8)))
+(s/def :server/seqno int?)
+
+(s/def :server/info (s/keys :req [:server/code :server/seqno]))
+
 (s/def :client/name (s/and string? #(<= 2 (count %) 20)))
 
 (s/def :client/peer
@@ -35,8 +39,8 @@
 ;; TODO: Use unqualified keys? Can be done with s/and?
 (s/def :client/game
   (s/merge :player/game
-           :client/peer
-           (s/keys :req [:server/code])))
+           :server/info
+           :client/peer))
 
 (defn all-present?
   "Returns true when all players are present, false otherwise."

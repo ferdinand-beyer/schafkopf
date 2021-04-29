@@ -35,7 +35,7 @@
 
 (defmethod -handle-event! :default
   [{:keys [id event]}]
-  (timbre/info "Push event from server:" id)
+  (timbre/trace "Relaying event:" id)
   (some-> event (rf/dispatch)))
 
 (defmethod -handle-event! :chsk/handshake
@@ -55,7 +55,7 @@
 
 (defmethod -handle-event! :chsk/ws-ping
   [{:keys [event]}]
-  (timbre/info "Received:" event))
+  (timbre/trace "Received:" event))
 
 (defn handle-event! [ev-msg]
   (-handle-event! ev-msg))
