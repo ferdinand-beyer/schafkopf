@@ -83,6 +83,24 @@
 (def deck (for [suit suit? rank rank?] [rank suit]))
 (def points {:deuce 11, 10 10, :king 4, :ober 3, :unter 2})
 
+;;;; Logic
+
+(defn started? [game]
+  (some? (:game/dealer-seat game)))
+
+(defn tricks-taken [game]
+  (->> (:game/players game)
+       (map (comp count :player/tricks))
+       (reduce +)))
+
+(defn all-taken? [game]
+  (= 8 (tricks-taken game)))
+
+(defn scored? [game]
+  (->> (:game/players game)
+       (some :player/score)
+       boolean))
+
 (s/fdef game
   :ret :schafkopf/game)
 
@@ -100,25 +118,28 @@
   :args (s/cat :game :schafkopf/game :seat :player/seat)
   :ret :player/game)
 
-(defn player-peer [{:player/keys [score hand tricks]}]
-  (cond-> #:player{:hand-count (count hand)
+(defn player-peer [{:player/keys [total hand tricks score]} scored?]
+  (cond-> #:player{:total total
+                   :hand-count (count hand)
                    :trick-count (count tricks)}
-    (some? score) (assoc :player/score score)))
+    (some? score) (assoc :player/score score)
+    scored? (assoc :player/tricks tricks)))
 
-;; TODO: Reveal tricks when game is over.
+;; TODO: Reveal tricks when game is scored.
 (defn player-game
   [{:game/keys [players] :as game} seat]
   (when-let [player (get players seat)]
-    (merge (select-keys game [:game/number
-                              :game/dealer-seat
-                              :game/active-seat
-                              :game/active-trick
-                              :game/pot])
-           (select-keys player [:player/score
-                                :player/hand])
-           (player-peer player)
-           {:player/seat seat
-            :player/peers (mapv player-peer players)})))
+    (let [scored? (scored? game)]
+      (merge
+       (select-keys game [:game/number
+                          :game/dealer-seat
+                          :game/active-seat
+                          :game/active-trick
+                          :game/pot])
+       (select-keys player [:player/hand])
+       (player-peer player scored?)
+       {:player/seat seat
+        :player/peers (mapv #(player-peer % scored?) players)}))))
 
 ;; TODO: Spec alternatives?
 ;; TODO: Name player-publics?
@@ -145,9 +166,6 @@
   "Returns how many games are left in this round."
   [game]
   (rem (:game/number game) 4))
-
-(defn started? [game]
-  (some? (:game/dealer-seat game)))
 
 (defn rand-seat []
   (rand-int 4))
@@ -249,5 +267,23 @@
                :game/active-seat seat)
         (update-in [:game/players seat :player/tricks] conj trick))))
 
-(defn count-points [cards]
-  (->> cards flatten (keep points) (reduce +)))
+(defn count-points
+  "Takes any nested structure of ranks, e.g. a collection of cards,
+   and sums up the points."
+  [nested-ranks]
+  (->> nested-ranks flatten (keep points) (reduce +)))
+
+(defn- update-points [player]
+  (->> (:player/tricks player)
+       count-points
+       (assoc player :player/points)))
+
+(defn summarize
+  "Once all tricks have been taken, counts all players' points."
+  [game]
+  {:pre [(all-taken? game)]}
+  (update game :game/players #(mapv update-points %)))
+
+(defn score [game scores])
+
+(defn next-game [game])

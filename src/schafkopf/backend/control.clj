@@ -146,16 +146,16 @@
     (when (progressed? server-game seqno)
       (timbre/info "User" uid "started game" (::code server-game)))))
 
-(defn can-play? [server-game seat]
+(defn can-play? [server-game seat card]
   (let [game (::game server-game)]
     (and (not (game/trick-complete? game))
-         (game/player-turn? game seat))))
+         (game/player-turn? game seat)
+         (game/has-card? game seat card))))
 
-;; TODO - ensure card in hand
 (defn play [server-game uid seqno card]
   (let [seat (get-in server-game [::clients uid ::seat])]
     (if (and (in-sync? server-game seqno)
-             (can-play? server-game seat))
+             (can-play? server-game seat card))
       (-> server-game
           (update ::game game/play-card card)
           (progress))

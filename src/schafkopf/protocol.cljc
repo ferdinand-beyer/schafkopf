@@ -1,16 +1,5 @@
 (ns schafkopf.protocol
-  "Utilities for the client-server protocol.
-   
-   Actions are allowed based on predicates:
-
-     join! when free-seats?
-     start! when all-present? and not started?
-     play! when my-turn?
-     take! when trick-complete?
-     score! when game-done?
-     next! when game-scored?
-
-   "
+  "Utilities for the client-server protocol."
   (:require [clojure.spec.alpha :as s]
             [schafkopf.game :as game]))
 
