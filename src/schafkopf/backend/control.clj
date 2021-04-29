@@ -1,3 +1,4 @@
+;; TODO rename to game
 (ns schafkopf.backend.control
   (:require [clojure.spec.alpha :as s]
             [mount.core :as mount]
@@ -18,6 +19,7 @@
 (defn valid-name? [name]
   (s/valid? :client/name name))
 
+;; TODO: Unique game-id, use code only for joining
 (defn server-game []
   {::code (generate-code)
    ::game (game/game)

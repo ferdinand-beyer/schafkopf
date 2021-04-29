@@ -52,3 +52,16 @@
 
 (defn t []
   (ns-tools/refresh :after `run-tests))
+
+(defn fake-peers
+  "Fill the current game with fake clients."
+  []
+  (let [game (ctl/ensure-game!)]
+    (doseq [i (range 3)]
+      (ctl/join-game! game
+                      (str "fake-" i)
+                      (str "Fake " i)
+                      (constantly nil)))))
+
+(defn server-game []
+  @ctl/game-atom)

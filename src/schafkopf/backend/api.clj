@@ -17,6 +17,7 @@
   "Returns true if the user is authorized to establish a channel socket,
    false otherwise."
   [req]
+  ;; TODO: Check for valid game ID + if the user is a player
   (some? (get-in req [:session :uid])))
 
 (let [{:keys [ch-recv send-fn
