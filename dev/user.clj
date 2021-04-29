@@ -30,7 +30,7 @@
 
 ;; Log to std-out (*out* might be re-bound in threads!)
 (timbre/merge-config!
- {:appenders {:std-out (appenders/println-appender {:stream :std-out})}})
+ {:appenders {:println (appenders/println-appender {:stream :std-out})}})
 
 (defn app-states []
   (filter #(str/starts-with? % "#'schafkopf") (mount/find-all-states)))
