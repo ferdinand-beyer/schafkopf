@@ -118,25 +118,34 @@
   :args (s/cat :game :schafkopf/game :seat :player/seat)
   :ret :player/game)
 
-(defn player-peer [{:player/keys [total hand tricks score]} scored?]
+(defn player-peer [{:player/keys [total hand tricks points score]}
+                   scored?]
   (cond-> #:player{:total total
                    :hand-count (count hand)
                    :trick-count (count tricks)}
+    (some? points) (assoc :player/points points)
     (some? score) (assoc :player/score score)
     scored? (assoc :player/tricks tricks)))
 
-;; TODO: Reveal tricks when game is scored.
 (defn player-game
   [{:game/keys [players] :as game} seat]
   (when-let [player (get players seat)]
-    (let [scored? (scored? game)]
+    (let [scored? (scored? game)
+
+          ;; When we have points we can see our own tricks.
+          player-keys (cond-> [:player/hand]
+                        (some? (:player/points player-game))
+                        (conj :player/tricks))]
+
       (merge
        (select-keys game [:game/number
                           :game/dealer-seat
                           :game/active-seat
                           :game/active-trick
                           :game/pot])
-       (select-keys player [:player/hand])
+       (select-keys player player-keys)
+       ;; TODO: Swap our entry in the peers vector with :player/self,
+       ;; can merge the precomputed peer data here.
        (player-peer player scored?)
        {:player/seat seat
         :player/peers (mapv #(player-peer % scored?) players)}))))
@@ -156,6 +165,10 @@
 (defn hand-count [player]
   (or (:player/hand-count player)
       (count (:player/hand player))))
+
+(defn trick-count [player]
+  (or (:player/trick-count player)
+      (count (:player/trick player))))
 
 (defn round
   "Returns the current round in the game."

@@ -61,12 +61,16 @@
     (when-let [game (ctl/find-game code)]
       (ctl/play! game uid seqno card))))
 
+(defmethod -handle-event-message :client/take [{:keys [uid ?data]}]
+  (when-let [[code seqno] ?data]
+    (when-let [game (ctl/find-game code)]
+      (ctl/take! game uid seqno))))
+
 ;; TODO :game/reset
 ;; TODO :game/end
 
-;; TODO :client/take (the trick)
 ;; TODO :client/score
-;; TODO :client/ready
+;; TODO :client/next
 ;; TODO :client/undo
 
 (defn handle-event-message [{:as ev-msg :keys [uid event]}]

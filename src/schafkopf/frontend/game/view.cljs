@@ -85,14 +85,22 @@
    {:root {}}
    (fn [{:keys [classes seat]}]
      (let [name (rf/subscribe [::game/peer-name seat])
-           hand-count (rf/subscribe [::game/peer-hand-count seat])]
+           dealer? (rf/subscribe [::game/peer-dealer? seat])
+           active? (rf/subscribe [::game/peer-active? seat])
+           hand-count (rf/subscribe [::game/peer-hand-count seat])
+           trick-count (rf/subscribe [::game/peer-trick-count seat])]
        (fn [_]
          [mui/card
           {:classes {:root (:root classes)}}
           (if (some? @name)
             [:<>
              [mui/typography {:variant :h6} @name]
-             [mui/typography "Karten: " @hand-count]]
+             (when @dealer?
+               [mui/typography "Geber"])
+             (when @active?
+               [mui/typography "An der Reihe"])
+             [mui/typography "Karten: " @hand-count]
+             [mui/typography "Stiche: " @trick-count]]
             [mui/typography "(Unbesetzt)"])])))))
 
 ;; TODO just for demo :)
@@ -153,8 +161,25 @@
      [card {:card card'}])])
 
 (defn active-trick []
-  (let [trick' (rf/subscribe [::game/active-trick])]
-    [trick {:trick @trick'}]))
+  (let [trick' (rf/subscribe [::game/active-trick])
+        can-take? (rf/subscribe [::game/can-take?])]
+    [mui/grid
+     {:container true
+      :direction :column
+      :justify :center
+      :align-items :center
+      :spacing 2}
+     [mui/grid
+      {:item true}
+      [trick {:trick @trick'}]]
+     (when @can-take?
+       [mui/grid
+        {:item true}
+        [mui/button
+         {:variant :contained
+          :color :primary
+          :on-click #(rf/dispatch [::game/take])}
+         "Stich nehmen"]])]))
 
 (defn center []
   (let [started? @(rf/subscribe [::game/started?])

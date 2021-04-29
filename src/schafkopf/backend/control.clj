@@ -165,3 +165,22 @@
   (let [server-game (swap! game-atom play uid seqno card)]
     (when (progressed? server-game seqno)
       (timbre/info "User" uid "played card" card))))
+
+(defn can-take? [server-game]
+  (let [game (::game server-game)]
+    (game/trick-complete? game)))
+
+;; TODO: Auto-summarize when done
+(defn take-trick [server-game uid seqno]
+  (let [seat (get-in server-game [::clients uid ::seat])]
+    (if (and (in-sync? server-game seqno)
+             (can-take? server-game))
+      (-> server-game
+          (update ::game game/take-trick seat)
+          (progress))
+      (unchanged server-game))))
+
+(defn take! [game-atom uid seqno]
+  (let [server-game (swap! game-atom take-trick uid seqno)]
+    (when (progressed? server-game seqno)
+      (timbre/info "User" uid "took the trick"))))

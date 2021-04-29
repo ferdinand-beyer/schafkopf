@@ -1,9 +1,12 @@
 (ns user
-  {:clj-kondo/config '{:linters {:unused-namespace {:level :off}
-                                 :refer-all {:level :off}}}}
+  {:clj-kondo/config
+   '{:linters {:unused-namespace {:level :off}
+               :unused-referred-var {:level :off}
+               :refer-all {:level :off}}}}
+  
   (:require [clojure.repl :refer :all]
             [clojure.test :refer [run-all-tests]]
-            [clojure.tools.namespace.repl :as ns-tools]
+            [clojure.tools.namespace.repl :as ns-tools :refer [refresh]]
             
             [clojure.core.async :as async]
             [clojure.spec.alpha :as s]
@@ -45,26 +48,21 @@
 
 (defn reset []
   (stop)
-  (ns-tools/refresh :after `start))
+  (refresh :after `start))
 
 (defn run-tests []
   (run-all-tests #"^schafkopf\..*-test"))
 
 (defn t []
-  (ns-tools/refresh :after `run-tests))
+  (refresh :after `run-tests))
 
-(defn fake-peers
-  "Fill the current game with fake clients."
-  []
-  (let [game (ctl/ensure-game!)]
-    (doseq [i (range 3)]
-      (ctl/join-game! game
-                      (str "fake-" i)
-                      (str "Fake " i)
-                      (constantly nil)))))
+;;;; Game info
 
 (defn server-game []
   @ctl/game-atom)
+
+(defn client-game [uid]
+  (ctl/client-game (server-game) uid))
 
 (defn seqno []
   (::ctl/seqno (server-game)))
@@ -82,13 +80,27 @@
 (defn active-uid []
   (::ctl/uid (active-client)))
 
-(defn client-game [uid]
-  (ctl/client-game (server-game) uid))
+;;;; Game simulation
 
-(defn play
-  ([] (play (active-uid)))
+(defn join!
+  "Fill the current game with fake clients."
+  []
+  (let [game (ctl/ensure-game!)]
+    (doseq [i (range 3)]
+      (ctl/join-game! game
+                      (str "fake-" i)
+                      (str "Fake " i)
+                      (constantly nil)))))
+
+(defn play!
+  ([] (play! (active-uid)))
   ([uid]
    (let [card (first (:player/hand (client-game uid)))]
-     (play uid card)))
+     (play! uid card)))
   ([uid card]
    (ctl/play! ctl/game-atom uid (seqno) card)))
+
+(defn take!
+  ([] (take! (active-uid)))
+  ([uid]
+   (ctl/take! ctl/game-atom uid (seqno))))

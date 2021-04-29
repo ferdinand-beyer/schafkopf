@@ -3,14 +3,14 @@
             [schafkopf.game :as game]
             [schafkopf.protocol :as p]))
 
-;;;; Server events
+;;;; Server event handlers
 
 (rf/reg-event-db
  :game/update
  (fn [db [_ game]]
    (assoc db ::game game)))
 
-;;;; UI events
+;;;; UI event handlers
 
 (rf/reg-event-fx
  ::init
@@ -30,7 +30,13 @@
    (let [{:server/keys [code seqno]} (::game db)]
      {:chsk/send [:client/play [code seqno card]]})))
 
-;;;; Subscriptions
+(rf/reg-event-fx
+ ::take
+ (fn [{:keys [db]} _]
+   (let [{:server/keys [code seqno]} (::game db)]
+     {:chsk/send [:client/take [code seqno]]})))
+
+;;;; Game subscriptions
 
 (rf/reg-sub
  ::game
@@ -62,16 +68,24 @@
    (:server/code game)))
 
 (rf/reg-sub
+ ::dealer-seat
+ :<- [::game]
+ (fn [game _]
+   (:game/dealer-seat game)))
+
+(rf/reg-sub
+ ::active-seat
+ :<- [::game]
+ (fn [game _]
+   (:game/active-seat game)))
+
+(rf/reg-sub
  ::active-trick
  :<- [::game]
  (fn [game _]
    (:game/active-trick game)))
 
-(rf/reg-sub
- ::hand
- :<- [::game]
- (fn [game _]
-   (:player/hand game)))
+;;;; Player subscriptions
 
 (rf/reg-sub
  ::seat
@@ -80,11 +94,12 @@
    (:player/seat game)))
 
 (rf/reg-sub
- ::can-play?
+ ::hand
  :<- [::game]
  (fn [game _]
-   (and (game/player-turn? game (:player/seat game))
-        (not (game/trick-complete? game)))))
+   (:player/hand game)))
+
+;;;; Seat subscriptions
 
 (defn rotate-seat [seat offset]
   (rem (+ seat offset) 4))
@@ -108,6 +123,8 @@
  :<- [::seat]
  (seat-fn 3))
 
+;;;; Peer subscriptions
+
 (rf/reg-sub
  ::peers
  :<- [::game]
@@ -130,7 +147,40 @@
    (:client/name peer)))
 
 (rf/reg-sub
+ ::peer-active?
+ :<- [::active-seat]
+ (fn [active-seat [_ seat]]
+   (= active-seat seat)))
+
+(rf/reg-sub
+ ::peer-dealer?
+ :<- [::dealer-seat]
+ (fn [dealer-seat [_ seat]]
+   (= dealer-seat seat)))
+
+(rf/reg-sub
  ::peer-hand-count
  subscribe-peer
  (fn [peer _]
    (game/hand-count peer)))
+
+(rf/reg-sub
+ ::peer-trick-count
+ subscribe-peer
+ (fn [peer _]
+   (game/trick-count peer)))
+
+;;;; Action subscriptions
+
+(rf/reg-sub
+ ::can-play?
+ :<- [::game]
+ (fn [game _]
+   (and (game/player-turn? game (:player/seat game))
+        (not (game/trick-complete? game)))))
+
+(rf/reg-sub
+ ::can-take?
+ :<- [::game]
+ (fn [game _]
+   (game/trick-complete? game)))
