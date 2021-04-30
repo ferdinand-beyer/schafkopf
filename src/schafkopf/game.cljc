@@ -12,13 +12,16 @@
 (s/def :game/card (s/tuple rank? suit?))
 (s/def :game/deck (s/coll-of :game/card :count 32 :distinct true))
 
-(s/def :player/hand (s/coll-of :game/card :max-count 8 :distinct true :into #{}))
+(s/def :player/hand 
+       (s/coll-of :game/card :max-count 8 :distinct true :into #{}))
 
 ;; XXX do we need to record who played the first card?
-(s/def :player/trick (s/coll-of :game/card :kind vector? :count 4 :distinct true))
+(s/def :player/trick
+       (s/coll-of :game/card :kind vector? :count 4 :distinct true))
 
 ;; Uncomplete trick
-(s/def :game/active-trick (s/coll-of :game/card :kind vector? :max-count 4 :distinct true))
+(s/def :game/active-trick
+       (s/coll-of :game/card :kind vector? :max-count 4 :distinct true))
 
 ;; A player's won/taken tricks.
 (s/def :player/tricks (s/coll-of :player/trick :max-count 8))
@@ -33,11 +36,18 @@
 
 (s/def :player/points nat-int?)
 (s/def :player/score int?)
-(s/def :player/total :player/score)
-(s/def :game/pot :player/score)
+(s/def :player/balance :player/score)
+
+(s/def :game/pot-score :player/score)
+(s/def :game/pot nat-int?)
+
+(s/def :game.score/players
+       (s/coll-of :player/score :kind vector? :count 4))
+(s/def :game.score/pot :player/score)
+(s/def :game/score (s/keys :req [:game.score/players :game.score/pot]))
 
 (s/def :game/player-public
-  (s/keys :req [:player/total]
+  (s/keys :req [:player/balance]
           :opt [:player/points
                 :player/score]))
 
@@ -50,12 +60,12 @@
 (s/def :game/prev-trick :player/trick)
 
 (s/def :schafkopf/game-public
-  (s/keys :req [:game/number]
+  (s/keys :req [:game/number
+                :game/pot]
           :opt [:game/dealer-seat
                 :game/active-seat
                 :game/active-trick
-                :game/prev-trick
-                :game/pot]))
+                :game/prev-trick]))
 
 (s/def :schafkopf/game
   (s/merge :schafkopf/game-public
@@ -101,26 +111,26 @@
        (some :player/score)
        boolean))
 
-(s/fdef game
-  :ret :schafkopf/game)
+(def initial-player
+  #:player {:balance 0
+            :hand #{}
+            :tricks []})
 
-(defn game
-  "Creates a new game in initial configuration."
-  []
-  {:game/number 0
-   :game/players (->> {:player/total 0
-                       :player/hand #{}
-                       :player/tricks []}
-                       (repeat 4)
-                       vec)})
+(def initial-game
+  #:game {:number 0
+          :pot 0
+          :players (vec (repeat 4 initial-player))})
+
+(defn game []
+  initial-game)
 
 (s/fdef player-game
   :args (s/cat :game :schafkopf/game :seat :player/seat)
   :ret :player/game)
 
-(defn player-peer [{:player/keys [total hand tricks points score]}
+(defn player-peer [{:player/keys [balance hand tricks points score]}
                    scored?]
-  (cond-> #:player{:total total
+  (cond-> #:player{:balance balance
                    :hand-count (count hand)
                    :trick-count (count tricks)}
     (some? points) (assoc :player/points points)
@@ -297,6 +307,28 @@
   {:pre [(all-taken? game)]}
   (update game :game/players #(mapv update-points %)))
 
-(defn score [game scores])
+(defn valid-score?
+  [{:game.score/keys [players pot]}]
+  (zero? (reduce + pot players)))
+
+(s/fdef score
+  :args (s/cat :game :schafkopf/game
+               :game-score :game/score)
+  :ret :schafkopf/game)
+
+(defn score
+  "Scores a game, updating all balances."
+  [game {player-scores :game.score/players
+         pot-score :game.score/pot
+         :as game-score}]
+  {:pre [(valid-score? game-score)]}
+  (letfn [(update-player [player score]
+            (-> player
+                (assoc :player/score score)
+                (update :player/balance + score)))]
+    (-> game
+        (update :game/players #(mapv update-player % player-scores))
+        (assoc :game/pot-score pot-score)
+        (update :game/pot + pot-score))))
 
 (defn next-game [game])

@@ -2,10 +2,11 @@
   (:require [clojure.set :refer [subset?]]
             [clojure.test :refer [deftest is testing]]
             [expectations.clojure.test :refer [expect]]
-            [schafkopf.game :as game]))
+            [schafkopf.game :as game])
+  (:import [java.lang AssertionError]))
 
 (defn prepare-game []
-  (-> (game/game) game/start (game/deal game/deck)))
+  (-> (game/game) (game/start) (game/deal game/deck)))
 
 (defn play-card [game]
   (let [seat (:game/active-seat game)
@@ -23,10 +24,18 @@
 (defn play-game [game]
   (nth (iterate (comp take-trick play-trick) game) 8))
 
+(defn make-score [p0 p1 p2 p3 pot]
+  #:game.score {:players [p0 p1 p2 p3]
+                :pot pot})
+
+;;;; Tests
+
 (deftest test-new-game
   (let [game (game/game)]
     (expect :schafkopf/game game)
-    (is (= 0 (:game/number game)))))
+    (is (= 0 (:game/number game)))
+    (is (not (game/started? game)))
+    (is (= 0 (:game/pot game)))))
 
 (deftest test-deal
   (let [game (prepare-game)]
@@ -72,7 +81,7 @@
       )))
 
 (deftest test-take
-  (let [game (-> (prepare-game) play-trick)
+  (let [game (-> (prepare-game) (play-trick))
         seat 2
         trick (:game/active-trick game)
         game (game/take-trick game seat)]
@@ -85,10 +94,42 @@
     ))
 
 (deftest test-summarize
-  (let [game (-> (prepare-game) play-game game/summarize)
+  (let [game (-> (prepare-game) (play-game) (game/summarize))
         players (:game/players game)]
 
     (expect :schafkopf/game game)
     (is (every? (comp some? :player/points) players))
     (is (= 120 (reduce + (map :player/points players))))
     ))
+
+(deftest test-score
+  (let [game (-> (prepare-game) (play-game) (game/summarize))]
+
+    (testing "rejects invalid scores"
+      (is (thrown? AssertionError (game/score game (make-score 10 10 10 10 0))))
+      (is (thrown? AssertionError (game/score game (make-score 10 -10 10 -10 10))))
+
+    (expect :schafkopf/game (game/score game (make-score 10 -10 10 -10 0)))
+
+    (testing "associates scores correctly"
+      (let [game (game/score game (make-score 10 10 -10 -10 0))]
+        (is (= [10 10 -10 -10] (mapv :player/score (:game/players game))))
+        (is (zero? (:game/pot-score game)))))
+
+      (let [game (game/score game (make-score -10 -10 -10 -10 40))]
+        (is (= [-10 -10 -10 -10] (mapv :player/score (:game/players game))))
+        (is (= 40 (:game/pot-score game)))))
+
+    (testing "adds scores to balances"
+      (let [game1 (game/score game (make-score -50 -50 50 50 0))
+            game2 (game/score game1 (make-score -10 -10 -10 -10 40))
+            game3 (game/score game2 (make-score 60 -20 20 -20 -40))]
+
+        (is (= [-50 -50 50 50] (mapv :player/balance (:game/players game1))))
+        (is (= 0 (:game/pot game1)))
+
+        (is (= [-60 -60 40 40] (mapv :player/balance (:game/players game2))))
+        (is (= 40 (:game/pot game2)))
+
+        (is (= [0 -80 60 20] (mapv :player/balance (:game/players game3))))
+        (is (= 0 (:game/pot game3)))))))

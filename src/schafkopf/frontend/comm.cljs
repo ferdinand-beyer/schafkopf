@@ -42,6 +42,7 @@
   [{:keys [?data]}]
   (timbre/debug "Handshake: " ?data))
 
+;; TODO: Fetch game state on re-connect?
 (defmethod -handle-event! :chsk/state
   [{:keys [?data]}]
   (let [[_ new-state-map] ?data]

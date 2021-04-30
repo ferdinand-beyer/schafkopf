@@ -5,14 +5,16 @@
                :refer-all {:level :off}}}}
   
   (:require [clojure.repl :refer :all]
-            [clojure.test :refer [run-all-tests]]
             [clojure.tools.namespace.repl :as ns-tools :refer [refresh]]
             
             [clojure.core.async :as async]
+            [clojure.string :as str]
+
             [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
             [clojure.spec.test.alpha :as stest]
-            [clojure.string :as str]
+            
+            [kaocha.repl :as k]
 
             [mount.core :as mount]
             [wrench.core :as wrench]
@@ -29,7 +31,7 @@
 
 (ns-tools/set-refresh-dirs "src" "dev" "test")
 
-(pjstadig.humane-test-output/activate!)
+;;(pjstadig.humane-test-output/activate!)
 
 ;; Log to std-out (*out* might be re-bound in threads!)
 (timbre/merge-config!
@@ -37,8 +39,13 @@
 
 (stest/instrument)
 
+(mount/defstate kaocha-runner
+  :start (k/run-all))
+
 (defn app-states []
-  (filter #(str/starts-with? % "#'schafkopf") (mount/find-all-states)))
+  (filter #(or (str/starts-with? % "#'schafkopf")
+               (str/starts-with? % "#'user/"))
+          (mount/find-all-states)))
 
 (defn start []
   (wrench/reset! :env (wrench/from-file "dev/config.edn"))
@@ -51,12 +58,6 @@
 (defn reset []
   (stop)
   (refresh :after `start))
-
-(defn run-tests []
-  (run-all-tests #"^schafkopf\..*-test"))
-
-(defn t []
-  (refresh :after `run-tests))
 
 ;;;; Game info
 
