@@ -35,6 +35,8 @@
 (timbre/merge-config!
  {:appenders {:println (appenders/println-appender {:stream :std-out})}})
 
+(stest/instrument)
+
 (defn app-states []
   (filter #(str/starts-with? % "#'schafkopf") (mount/find-all-states)))
 
@@ -80,6 +82,11 @@
 (defn active-uid []
   (::ctl/uid (active-client)))
 
+(defn expand-fake-uid [uid]
+  (if (int? uid)
+    (str "fake-" uid)
+    uid))
+
 ;;;; Game simulation
 
 (defn join!
@@ -98,9 +105,17 @@
    (let [card (first (:player/hand (client-game uid)))]
      (play! uid card)))
   ([uid card]
-   (ctl/play! ctl/game-atom uid (seqno) card)))
+   (ctl/play! ctl/game-atom (expand-fake-uid uid) (seqno) card)))
+
+(defn play-fakes! []
+  (loop []
+    (let [uid (active-uid)]
+      (when (str/starts-with? uid "fake-")
+        (play!)
+        (recur)))))
 
 (defn take!
   ([] (take! (active-uid)))
   ([uid]
-   (ctl/take! ctl/game-atom uid (seqno))))
+   (ctl/take! ctl/game-atom (expand-fake-uid uid) (seqno))))
+
