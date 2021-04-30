@@ -8,13 +8,8 @@
    ;:module-loader true
    :module-hash-names true
    :modules
-   {:base {}
-    :reagent {:entries [reagent.core re-frame.core]
-              :depends-on #{:base}}
-    :mui {:entries [schafkopf.frontend.view.mui]
-          :depends-on #{:base :reagent}}
-    :main {:init-fn schafkopf.frontend.core/init!
-           :depends-on #{:base :mui :reagent}}}}
+   ;; TODO: Code splitting did not work for release version...
+   {:main {:init-fn schafkopf.frontend.core/init!}}}
 
   :test
   {:target :browser-test

@@ -11,7 +11,7 @@
             [schafkopf.backend.pages :as pages]))
 
 (config/def port {:spec int? :default 8000})
-(config/def cookie-store-key {:spec string? :required true :secret true})
+(config/def cookie-store-key {:spec string? :require true :secret true})
 
 (def routes
   [["/" {:get pages/index}]

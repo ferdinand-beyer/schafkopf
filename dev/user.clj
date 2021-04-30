@@ -27,7 +27,8 @@
             [schafkopf.game :as game]
             [schafkopf.protocol :as protocol]
             
-            [user.cljs-build :as cljs-build]))
+            [user.cljs-build :as cljs-build]
+            [user.util :as util]))
 
 (ns-tools/set-refresh-dirs "src" "dev" "test")
 

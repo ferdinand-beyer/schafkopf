@@ -9,7 +9,7 @@
             [schafkopf.backend.control :as ctl]))
 
 (config/def host-name {:default "Host"})
-(config/def host-password {:required true :secret true})
+(config/def host-password {:require true :secret true})
 
 ;;;; Channel sockets
 

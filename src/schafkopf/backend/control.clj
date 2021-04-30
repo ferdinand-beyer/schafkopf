@@ -3,7 +3,9 @@
   (:require [clojure.spec.alpha :as s]
             [mount.core :as mount]
             [taoensso.timbre :as timbre]
-            [schafkopf.game :as game]))
+            [schafkopf.game :as game]
+            ;; for :client/name spec
+            [schafkopf.protocol]))
 
 (s/def ::uid string?)
 

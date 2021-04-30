@@ -8,16 +8,20 @@ MAKEFLAGS += --no-builtin-rules --warn-undefined-variables
 
 BUILD_DIR := build
 JS_DIR := resources/public/assets/js
+JAR := schafkopf.jar
+JS_TARGET := $(JS_DIR)/manifest.edn
 
 .PHONY: all
 all:
 
 .PHONY: build
-build: build-cljs
+build: jar
 
 .PHONY: build-cljs
-build-cljs:
-	clojure -M:cljs:shadow-cljs release app
+build-cljs: $(JS_TARGET)
+
+.PHONY: jar
+jar: $(JAR)
 
 .PHONY: repl
 repl:
@@ -25,4 +29,11 @@ repl:
 
 .PHONY: clean
 clean:
-	rm -rf $(BUILD_DIR) $(JS_DIR)
+	-rm -rf $(JAR) $(BUILD_DIR) $(JS_DIR)
+
+$(JS_TARGET):
+	rm -rf $(JS_DIR)
+	clojure -M:cljs:shadow-cljs release app
+
+$(JAR): $(JS_TARGET)
+	clojure -X:uberjar :jar $@

@@ -21,6 +21,7 @@
      [:link {:rel "stylesheet"
              :href "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"}]]
     [:body
-     [:div#app]
+     [:div#app
+      "Loading..."]
      (for [url (assets/js-assets)]
        (page/include-js url))])))
