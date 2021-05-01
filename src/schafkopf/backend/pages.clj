@@ -18,10 +18,12 @@
      [:meta {:name "viewport" :content "minimum-scale=1, initial-scale=1, width=device-width"}]
      [:meta {:name "csrf-token" :content anti-forgery-token}]
      [:title "Schafkopf"]
-     [:link {:rel "stylesheet"
-             :href "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"}]]
+     [:link {:rel "icon"
+             :type "image/svg+xml"
+             :href (assets/suit-svg-uri "bells")}]
+     (page/include-css
+      "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap")]
     [:body
-     [:div#app
-      "Loading..."]
-     (for [url (assets/js-assets)]
-       (page/include-js url))])))
+     [:div#app "Loading..."]
+     (apply page/include-js (assets/js-assets))])))
+ 

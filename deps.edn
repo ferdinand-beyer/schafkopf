@@ -25,7 +25,7 @@
   {:main-opts ["-m" "kaocha.runner"]}
 
   :dev
-  {:extra-paths ["dev" "test"]
+  {:extra-paths ["dev"]
    :extra-deps
    {org.clojure/tools.namespace {:mvn/version "1.1.0"}
     ring/ring-devel {:mvn/version "1.9.2"}}}
