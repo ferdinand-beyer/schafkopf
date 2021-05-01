@@ -16,7 +16,7 @@
  (fn [db _]
    (-> db
        (update :scoring? not)
-       (dissoc :scores))))
+       (dissoc :scores :error))))
 
 (rf/reg-event-db
  ::change
