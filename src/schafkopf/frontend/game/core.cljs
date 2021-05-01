@@ -44,7 +44,7 @@
    (::game db)))
 
 (rf/reg-sub
- ::active?
+ ::joined?
  :<- [::game]
  (fn [game _]
    (some? game)))
