@@ -93,6 +93,7 @@
  (fn [game _]
    (:player/seat game)))
 
+;; TODO: Sorting :)
 (rf/reg-sub
  ::hand
  :<- [::game]
@@ -104,6 +105,12 @@
  :<- [::game]
  (fn [game _]
    (some? (:player/tricks game))))
+
+(rf/reg-sub
+ ::tricks
+ :<- [::game]
+ (fn [game _]
+   (:player/tricks game)))
 
 ;;;; Seat subscriptions
 

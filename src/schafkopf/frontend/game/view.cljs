@@ -1,5 +1,8 @@
+;; TODO: Split into multiple namespaces!
 (ns schafkopf.frontend.game.view
-  (:require [re-frame.core :as rf]
+  (:require [reagent.core :as r]
+            [re-frame.core :as rf]
+
             ;; TODO require MUI components selectively!
             [mui-bien.core.all :as mui]
             [mui-bien.core.styles :refer [with-styles]]
@@ -160,11 +163,37 @@
          ^{:key i}
          [mui/grid {:item true} card])])))
 
+;; TODO: Use "component names" for these, to avoid confusing
+;; with related data (card' trick')!
 (defn trick [{:keys [trick]}]
   [-trick
    (for [card' trick]
      ^{:key (card-key card')}
      [card {:card card'}])])
+
+(defn player-tricks-detail []
+  (let [tricks (rf/subscribe [::game/tricks])]
+    (fn [_]
+      [:div
+       (for [[i trick'] (map vector (range) @tricks)]
+         ^{:key i}
+         [trick {:trick trick'}])])))
+
+(defn player-tricks []
+  (let [open? (r/atom false)
+        toggle-open #(swap! open? not)]
+    (fn [_]
+      [:<>
+       [mui/button
+        {:disabled @open?
+         :on-click toggle-open}
+        "Meine Stiche ansehen"]
+       [mui/backdrop
+        {:open @open?
+         :style {:z-index 100} ; TODO - calculate from theme
+         :on-click toggle-open}
+        (when @open?
+          [player-tricks-detail])]])))
 
 (defn active-trick []
   (let [trick' (rf/subscribe [::game/active-trick])
@@ -193,7 +222,7 @@
         tricks-visible? @(rf/subscribe [::game/tricks-visible?])]
     (cond
       tricks-visible?
-      [mui/button "Meine Stiche ansehen"]
+      [player-tricks]
 
       started?
       [active-trick]
