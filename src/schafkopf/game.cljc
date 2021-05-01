@@ -120,7 +120,7 @@
   (= 8 (tricks-taken game)))
 
 (defn scored? [game]
-  (->> (:game/players game)
+  (->> (players game)
        (some :player/score)
        boolean))
 

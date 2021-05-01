@@ -227,8 +227,12 @@
   (let [started? @(rf/subscribe [::game/started?])
         can-start? @(rf/subscribe [::game/can-start?])
         tricks-visible? @(rf/subscribe [::game/can-see-tricks?])
-        can-score? @(rf/subscribe [::score/can-score?])]
+        can-score? @(rf/subscribe [::score/can-score?])
+        can-start-next? @(rf/subscribe [::game/can-start-next?])]
     (cond
+      can-start-next?
+      [mui/button "Nächstes Spiel"]
+
       tricks-visible?
       [:div
        [player-tricks]

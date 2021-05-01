@@ -56,12 +56,6 @@
    (game/started? game)))
 
 (rf/reg-sub
- ::can-start?
- :<- [::game]
- (fn [game _]
-   (p/can-start? game)))
-
-(rf/reg-sub
  ::code
  :<- [::game]
  (fn [game _]
@@ -210,6 +204,12 @@
 ;;;; Action subscriptions
 
 (rf/reg-sub
+ ::can-start?
+ :<- [::game]
+ (fn [game _]
+   (p/can-start? game)))
+
+(rf/reg-sub
  ::can-play?
  :<- [::game]
  (fn [game _]
@@ -221,3 +221,9 @@
  :<- [::game]
  (fn [game _]
    (game/trick-complete? game)))
+
+(rf/reg-sub
+ ::can-start-next?
+ :<- [::game]
+ (fn [game]
+   (game/scored? game)))
