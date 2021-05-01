@@ -6,8 +6,6 @@
 build/
 node_modules/
 .nrepl-port
-package.json
-package-lock.json
 
 *.jar
 *.local
