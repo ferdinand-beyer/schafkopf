@@ -129,7 +129,7 @@
   (and (= 4 (count (::clients server-game)))
        (not (game/started? (::game server-game)))))
 
-(defn start-game [server-game seqno]
+(defn start [server-game seqno]
   (if (and (in-sync? server-game seqno)
            (can-start? server-game))
     (let [dealer-seat (game/rand-seat)
@@ -143,8 +143,8 @@
     (unchanged server-game)))
 
 ;; TODO - verify uid is a player?
-(defn start-game! [game-atom uid seqno]
-  (let [server-game (swap! game-atom start-game seqno)]
+(defn start! [game-atom uid seqno]
+  (let [server-game (swap! game-atom start seqno)]
     (when (progressed? server-game seqno)
       (timbre/info "User" uid "started game" (::code server-game)))))
 

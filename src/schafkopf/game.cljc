@@ -124,12 +124,10 @@
 (defn game []
   initial-game)
 
-(s/fdef player-game
-  :args (s/cat :game :schafkopf/game :seat :player/seat)
-  :ret :player/game)
-
-(defn player-peer [{:player/keys [balance hand tricks points score]}
-                   scored?]
+(defn player-peer
+  "Returns publicly available information of a player."
+  [{:player/keys [balance hand tricks points score]}
+   scored?]
   (cond-> #:player{:balance balance
                    :hand-count (count hand)
                    :trick-count (count tricks)}
@@ -137,14 +135,19 @@
     (some? score) (assoc :player/score score)
     scored? (assoc :player/tricks tricks)))
 
+(s/fdef player-game
+  :args (s/cat :game :schafkopf/game :seat :player/seat)
+  :ret :player/game)
+
 (defn player-game
+  "Returns the state of the game from a player's perspective."
   [{:game/keys [players] :as game} seat]
   (when-let [player (get players seat)]
     (let [scored? (scored? game)
 
           ;; When we have points we can see our own tricks.
           player-keys (cond-> [:player/hand]
-                        (some? (:player/points player-game))
+                        (contains? player :player/points)
                         (conj :player/tricks))]
 
       (merge
@@ -153,12 +156,15 @@
                           :game/active-seat
                           :game/active-trick
                           :game/pot])
-       (select-keys player player-keys)
+
        ;; TODO: Swap our entry in the peers vector with :player/self,
        ;; can merge the precomputed peer data here.
        (player-peer player scored?)
+
        {:player/seat seat
-        :player/peers (mapv #(player-peer % scored?) players)}))))
+        :player/peers (mapv #(player-peer % scored?) players)}
+       
+       (select-keys player player-keys)))))
 
 ;; TODO: Spec alternatives?
 ;; TODO: Name player-publics?

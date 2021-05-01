@@ -54,7 +54,7 @@
 (defmethod -handle-event-message :game/start [{:keys [uid ?data]}]
   (when-let [[code seqno] ?data]
     (when-let [game (ctl/find-game code)]
-      (ctl/start-game! game uid seqno))))
+      (ctl/start! game uid seqno))))
 
 (defmethod -handle-event-message :client/play [{:keys [uid ?data]}]
   (when-let [[code seqno card] ?data]

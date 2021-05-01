@@ -99,6 +99,12 @@
  (fn [game _]
    (:player/hand game)))
 
+(rf/reg-sub
+ ::tricks-visible?
+ :<- [::game]
+ (fn [game _]
+   (some? (:player/tricks game))))
+
 ;;;; Seat subscriptions
 
 (defn rotate-seat [seat offset]
@@ -137,15 +143,6 @@
  (fn [peers [_ seat]]
    (get peers seat)))
 
-(defn subscribe-peer [[_ seat]]
-  (rf/subscribe [::peer seat]))
-
-(rf/reg-sub
- ::peer-name
- subscribe-peer
- (fn [peer _]
-   (:client/name peer)))
-
 (rf/reg-sub
  ::peer-active?
  :<- [::active-seat]
@@ -157,6 +154,15 @@
  :<- [::dealer-seat]
  (fn [dealer-seat [_ seat]]
    (= dealer-seat seat)))
+
+(defn subscribe-peer [[_ seat]]
+  (rf/subscribe [::peer seat]))
+
+(rf/reg-sub
+ ::peer-name
+ subscribe-peer
+ (fn [peer _]
+   (:client/name peer)))
 
 (rf/reg-sub
  ::peer-hand-count
@@ -175,6 +181,12 @@
  subscribe-peer
  (fn [peer _]
    (:player/points peer)))
+
+(rf/reg-sub
+ ::peer-tricks-visible?
+ subscribe-peer
+ (fn [peer _]
+   (some? (:player/tricks peer))))
 
 ;;;; Action subscriptions
 

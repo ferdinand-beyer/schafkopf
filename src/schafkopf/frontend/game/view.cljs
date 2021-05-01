@@ -89,6 +89,7 @@
            active? (rf/subscribe [::game/peer-active? seat])
            hand-count (rf/subscribe [::game/peer-hand-count seat])
            trick-count (rf/subscribe [::game/peer-trick-count seat])
+           tricks-visible? (rf/subscribe [::game/peer-tricks-visible? seat])
            points (rf/subscribe [::game/peer-points seat])]
        (fn [_]
          [mui/card
@@ -102,6 +103,8 @@
                [mui/typography "An der Reihe"])
              [mui/typography "Karten: " @hand-count]
              [mui/typography "Stiche: " @trick-count]
+             (when @tricks-visible?
+               [mui/button "Stiche ansehen"])
              (when @points
                [mui/typography "Punkte: " @points])]
             [mui/typography "(Unbesetzt)"])])))))
@@ -185,9 +188,13 @@
          "Stich nehmen"]])]))
 
 (defn center []
-  (let [started? @(rf/subscribe [::game/started?])
-        can-start? @(rf/subscribe [::game/can-start?])]
+  (let [can-start? @(rf/subscribe [::game/can-start?])
+        started? @(rf/subscribe [::game/started?])
+        tricks-visible? @(rf/subscribe [::game/tricks-visible?])]
     (cond
+      tricks-visible?
+      [mui/button "Meine Stiche ansehen"]
+
       started?
       [active-trick]
 
