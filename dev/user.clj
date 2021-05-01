@@ -22,9 +22,9 @@
             [taoensso.timbre :as log]
             [taoensso.timbre.appenders.core :as appenders]
 
-            [schafkopf.backend.control :as sg]
             [schafkopf.game :as g]
             [schafkopf.protocol :as protocol]
+            [schafkopf.backend.game :as sg]
 
             [user.cljs-build :as cljs-build]
             [user.game-control :as ctl]

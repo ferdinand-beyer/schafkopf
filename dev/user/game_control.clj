@@ -1,7 +1,7 @@
 (ns user.game-control
   (:require [clojure.string :as str]
-            [schafkopf.backend.control :as sg]
-            [schafkopf.game :as g]))
+            [schafkopf.game :as g]
+            [schafkopf.backend.game :as sg]))
 
 ;;;; Game info
 

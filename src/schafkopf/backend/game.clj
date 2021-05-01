@@ -1,5 +1,4 @@
-;; TODO rename to game
-(ns schafkopf.backend.control
+(ns schafkopf.backend.game
   (:require [clojure.spec.alpha :as s]
             [mount.core :as mount]
             [taoensso.timbre :as log]

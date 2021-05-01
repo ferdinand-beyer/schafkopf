@@ -6,7 +6,7 @@
             [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
             [taoensso.sente.packers.transit :as sente-transit]
             [taoensso.timbre :as log]
-            [schafkopf.backend.control :as sg]))
+            [schafkopf.backend.game :as sg]))
 
 (config/def host-name {:default "Host"})
 (config/def host-password {:require true :secret true})
