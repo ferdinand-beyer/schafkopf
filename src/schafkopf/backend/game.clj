@@ -45,6 +45,8 @@
   (when (= code (::code @game-atom))
     game-atom))
 
+;;;; Client game
+
 (defn- populate-peers [client-game clients]
   (reduce
    (fn [g [_ {::keys [seat name]}]]
@@ -80,8 +82,17 @@
   :start (add-watch game-atom ::broadcaster broadcaster-watch)
   :stop (remove-watch game-atom ::broadcaster))
 
+;;;; Server game
+
+(defn valid-client? [server-game uid]
+  (contains? (::clients server-game) uid))
+
 (defn- in-sync? [server-game seqno]
   (= seqno (::seqno server-game)))
+
+(defn client-ok? [server-game uid seqno]
+  (and (valid-client? server-game uid)
+       (in-sync? server-game seqno)))
 
 (defn- progress [server-game]
   (update server-game ::seqno inc))
@@ -128,22 +139,19 @@
   (and (= 4 (count (::clients server-game)))
        (not (g/started? (::game server-game)))))
 
-(defn start [server-game seqno]
-  (if (and (in-sync? server-game seqno)
+(defn start [server-game uid seqno]
+  (if (and (client-ok? server-game uid seqno)
            (can-start? server-game))
-    (let [dealer-seat (g/rand-seat)
-          deck (g/shuffled-deck)]
-      (-> server-game
-          (update ::game
-                  #(-> %
-                       (g/start dealer-seat)
-                       (g/deal deck)))
-          (progress)))
+    (-> server-game
+        (update ::game
+                #(-> %
+                     (g/start (g/rand-seat))
+                     (g/deal (g/shuffled-deck))))
+        (progress))
     (unchanged server-game)))
 
-;; TODO - verify uid is a player?
 (defn start! [game-atom uid seqno]
-  (let [server-game (swap! game-atom start seqno)]
+  (let [server-game (swap! game-atom start uid seqno)]
     (when (progressed? server-game seqno)
       (log/info "User" uid "started game" (::code server-game)))))
 
@@ -155,7 +163,7 @@
 
 (defn play [server-game uid seqno card]
   (let [seat (get-in server-game [::clients uid ::seat])]
-    (if (and (in-sync? server-game seqno)
+    (if (and (client-ok? server-game uid seqno)
              (can-play? server-game seat card))
       (-> server-game
           (update ::game g/play-card card)
@@ -173,7 +181,7 @@
 
 (defn take-trick [server-game uid seqno]
   (let [seat (get-in server-game [::clients uid ::seat])]
-    (if (and (in-sync? server-game seqno)
+    (if (and (client-ok? server-game uid seqno)
              (can-take? server-game))
       (let [server-game (update server-game ::game g/take-trick seat)
             game (::game server-game)]
@@ -194,8 +202,8 @@
     (and (g/can-score? game)
          (g/valid-score? game score))))
 
-(defn score [server-game seqno score]
-  (if (and (in-sync? server-game seqno)
+(defn score [server-game uid seqno score]
+  (if (and (client-ok? server-game uid seqno)
            (can-score? server-game score))
     (-> server-game
         (update ::game g/score score)
@@ -203,6 +211,24 @@
     (unchanged server-game)))
 
 (defn score! [game-atom uid seqno game-score]
-  (let [server-game (swap! game-atom score seqno game-score)]
+  (let [server-game (swap! game-atom score uid seqno game-score)]
     (when (progressed? server-game seqno)
       (log/info "User" uid "scored the game"))))
+
+(defn can-start-next? [server-game]
+  (let [game (::game server-game)]
+    (g/scored? game)))
+
+(defn start-next [server-game uid seqno]
+  (if (and (client-ok? server-game uid seqno)
+           (can-start-next? server-game))
+    (-> server-game
+        (update ::game #(-> % (g/start-next) (g/deal (g/shuffled-deck))))
+        (progress))
+    (unchanged server-game)))
+
+;; TODO: Same as start?
+(defn start-next! [game-atom uid seqno]
+  (let [server-game (swap! game-atom start-next uid seqno)]
+    (when (progressed? server-game seqno)
+      (log/info "User" uid "started the next game"))))

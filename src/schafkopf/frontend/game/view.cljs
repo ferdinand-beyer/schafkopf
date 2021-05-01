@@ -108,7 +108,7 @@
           (when @active?
             [mui/typography "An der Reihe"])
           
-          [mui/typography "Saldo:" @balance]
+          [mui/typography "Saldo: " @balance]
           [mui/typography "Karten: " @hand-count]
           [mui/typography "Stiche: " @trick-count]
           (when @tricks-visible?
@@ -173,15 +173,22 @@
 ;; TODO: Use "component names" for these, to avoid confusing
 ;; with related data (card' trick')!
 (defn trick [{:keys [trick]}]
-  [-trick
+  [mui/grid
+   {:container true
+    :direction :row
+    :spacing 1}
    (for [card' trick]
      ^{:key (card-key card')}
-     [card {:card card'}])])
+     [mui/grid
+      {:item true}
+      [card {:card card'}]])])
 
 (defn player-tricks-detail []
   (let [tricks (rf/subscribe [::game/tricks])]
     (fn [_]
       [:div
+       {:style {:height "100vh"
+                :overflow :scroll}}
        (for [[i trick'] (map vector (range) @tricks)]
          ^{:key i}
          [trick {:trick trick'}])])))
@@ -231,13 +238,19 @@
         can-start-next? @(rf/subscribe [::game/can-start-next?])]
     (cond
       can-start-next?
-      [mui/button "Nächstes Spiel"]
+      [mui/button
+       {:variant :contained
+        :color :primary
+        :on-click #(rf/dispatch [::game/start-next])}
+       "Nächstes Spiel"]
 
       tricks-visible?
       [:div
        [player-tricks]
        (when can-score?
-         [score-button])]
+         [score-button
+          {:variant :contained
+           :color :primary}])]
 
       started?
       [active-trick]
@@ -255,12 +268,17 @@
        [:p "Warten auf weitere Teilnehmer..."]])))
 
 (defn game-info []
-  (let [code (rf/subscribe [::game/code])]
+  (let [code (rf/subscribe [::game/code])
+        number (rf/subscribe [::game/number])
+        round (rf/subscribe [::game/round])]
     [:<>
      [mui/typography
       {:variant :h5}
       "Schafkopf"]
-     [mui/typography "Raumcode: " [:strong @code]]]))
+     [mui/typography
+      [:div "Raumcode: " [:strong @code]]
+      [:div "Spiel: " @number]
+      [:div "Runde: " @round]]]))
 
 (def game-screen
   (with-styles

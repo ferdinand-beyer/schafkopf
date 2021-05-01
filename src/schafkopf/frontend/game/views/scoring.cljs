@@ -63,7 +63,7 @@
       [button
        {:type :submit
         :color :primary}
-       "Speichern"]]]))
+       "Aufschreiben"]]]))
 
 (defn score-dialog [{:keys [open? on-close]}]
   [dialog
@@ -71,14 +71,15 @@
     :on-close on-close}
    [score-dialog-form]])
 
-(defn score-button []
+(defn score-button [props]
   (let [open? (rf/subscribe [::score/scoring?])
         toggle-open #(rf/dispatch [::score/toggle])]
     (fn [_]
       [:<>
        [button
-        {:disabled @open?
-         :on-click toggle-open}
-        "Spiel bewerten"]
+        (assoc props
+               :disabled @open?
+               :on-click toggle-open)
+        "Aufschreiben"]
        [score-dialog {:open? @open?
                       :on-close toggle-open}]])))

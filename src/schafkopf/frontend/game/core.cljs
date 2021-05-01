@@ -36,6 +36,12 @@
    (let [{:server/keys [code seqno]} (::game db)]
      {:chsk/send [:client/take [code seqno]]})))
 
+(rf/reg-event-fx
+ ::start-next
+ (fn [{:keys [db]} _]
+   (let [{:server/keys [code seqno]} (::game db)]
+     {:chsk/send [:client/start-next [code seqno]]})))
+
 ;;;; Game subscriptions
 
 (rf/reg-sub
@@ -60,6 +66,18 @@
  :<- [::game]
  (fn [game _]
    (:server/code game)))
+
+(rf/reg-sub
+ ::number
+ :<- [::game]
+ (fn [{:game/keys [number]} _]
+   (inc number)))
+
+(rf/reg-sub
+ ::round
+ :<- [::game]
+ (fn [game _]
+   (inc (g/round game))))
 
 (rf/reg-sub
  ::dealer-seat

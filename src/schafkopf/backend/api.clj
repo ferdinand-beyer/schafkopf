@@ -71,10 +71,14 @@
     (when-let [game (sg/find-game code)]
       (sg/score! game uid seqno score))))
 
+(defmethod -handle-event-message :client/start-next [{:keys [uid ?data]}]
+  (when-let [[code seqno] ?data]
+    (when-let [game (sg/find-game code)]
+      (sg/start-next! game uid seqno))))
+
 ;; TODO :game/reset
 ;; TODO :game/end
 
-;; TODO :client/next
 ;; TODO :client/undo
 
 (defn handle-event-message [{:as ev-msg :keys [uid event]}]

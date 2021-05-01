@@ -2,6 +2,7 @@
 ;; schafkopf.deck
 ;; schafkopf.game
 ;; schafkopf.player
+;; Could be: common.game
 (ns schafkopf.game
   "Minimalist Schafkopf game implementation."
   (:require [clojure.spec.alpha :as s]))
@@ -284,7 +285,7 @@
 
 (defn deal
   "Deals cards from a the given deck to the players."
-  ([game] (deal game (shuffled-deck)))
+  ([game] (deal game deck))
   ([game deck]
    {:pre [(started? game)]}
    (let [forehand (next-seat (:game/dealer-seat game))
