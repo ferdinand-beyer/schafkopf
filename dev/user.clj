@@ -32,7 +32,7 @@
 
 (ns-tools/set-refresh-dirs "src" "dev" "test")
 
-;;(pjstadig.humane-test-output/activate!)
+(pjstadig.humane-test-output/activate!)
 
 ;; Log to std-out (*out* might be re-bound in threads!)
 (timbre/merge-config!

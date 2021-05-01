@@ -1,15 +1,19 @@
 {:builds
  {:app
   {:target :browser
-   ;; TODO: Put those in build/resources/... to strictly separate
-   ;; source files and generated files?
-   :output-dir "resources/public/assets/js"
+   :output-dir "build/resources/public/assets/js"
    :asset-path "/assets/js"
+   ;; If we want to load modules dynamically one day:
    ;:module-loader true
    :module-hash-names true
+   ;; https://clojure.atlassian.net/browse/CLJS-3207
+   :compiler-options {:cross-chunk-method-motion false}
    :modules
-   ;; TODO: Code splitting did not work for release version...
-   {:main {:init-fn schafkopf.frontend.core/init!}}}
+   {:base {:entries [cljs.core reagent.core re-frame.core]}
+    :mui {:entries [schafkopf.frontend.view.mui]
+          :depends-on #{:base}}
+    :main {:init-fn schafkopf.frontend.core/init!
+           :depends-on #{:base :mui}}}}
 
   :test
   {:target :browser-test
@@ -19,5 +23,4 @@
 
   :node-test
   {:target :node-test
-   :output-to "build/test/node/node-tests.js"
-   :autorun true}}}
+   :output-to "build/test/node/run-tests.js"}}}

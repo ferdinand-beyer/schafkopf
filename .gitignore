@@ -2,12 +2,10 @@
 .clj-kondo/.cache/
 .cpcache/
 .lsp/
-.nrepl-port
-
 .shadow-cljs/
 build/
 node_modules/
-resources/public/assets/js/
+.nrepl-port
 package.json
 package-lock.json
 
