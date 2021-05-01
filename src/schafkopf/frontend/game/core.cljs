@@ -172,6 +172,12 @@
    (:client/name peer)))
 
 (rf/reg-sub
+ ::peer-balance
+ subscribe-peer
+ (fn [peer _]
+   (:player/balance peer)))
+
+(rf/reg-sub
  ::peer-hand-count
  subscribe-peer
  (fn [peer _]
@@ -188,6 +194,12 @@
  subscribe-peer
  (fn [peer _]
    (:player/points peer)))
+
+(rf/reg-sub
+ ::peer-score
+ subscribe-peer
+ (fn [peer _]
+   (:player/score peer)))
 
 (rf/reg-sub
  ::peer-tricks-visible?

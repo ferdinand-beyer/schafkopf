@@ -192,8 +192,8 @@
 
 (defn can-score? [server-game score]
   (let [game (::game server-game)]
-    (and (game/all-taken? game)
-         (game/valid-score? score))))
+    (and (game/can-score? game)
+         (game/valid-score? game score))))
 
 (defn score [server-game seqno score]
   (if (and (in-sync? server-game seqno)

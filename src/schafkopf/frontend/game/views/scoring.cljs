@@ -25,7 +25,8 @@
             :on-change #(rf/dispatch [::score/change seat (.. % -target -value)]))]))
 
 (defn score-dialog-form [_]
-  (let [error @(rf/subscribe [::score/error])
+  (let [sum @(rf/subscribe [::score/sum])
+        error @(rf/subscribe [::score/error])
         has-error? (some? error)]
     [:form
      {:on-submit (fn [e]
@@ -47,10 +48,15 @@
             :xs true}
            [score-field {:seat seat
                          :error has-error?}]]))]
-
+      
+      [:div
+       "Summe: " sum]
+      
       [form-helper-text
        {:error has-error?}
-       (or error " ")]]
+       (or error " ")]
+      
+      ]
 
      [dialog-actions
       #_[player-tricks]

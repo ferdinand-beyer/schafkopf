@@ -313,10 +313,17 @@
   {:pre [(all-taken? game)]}
   (update game :game/players #(mapv update-points %)))
 
-;; TODO: But not all must be zero :)
 (defn valid-score?
-  [{:game.score/keys [players pot]}]
-  (zero? (reduce + pot players)))
+  ([{:game.score/keys [players pot]}]
+   (and (zero? (reduce + pot players))
+        (not (every? zero? (conj players pot)))))
+  ([game {:game.score/keys [pot] :as game-score}]
+   (and (valid-score? game-score)
+        (not (neg? (+ (:game/pot game) pot))))))
+
+(defn can-score? [game]
+  (and (all-taken? game)
+       (not (scored? game))))
 
 (s/fdef score
   :args (s/cat :game :schafkopf/game
@@ -328,8 +335,8 @@
   [game {player-scores :game.score/players
          pot-score :game.score/pot
          :as game-score}]
-  {:pre [(valid-score? game-score)
-         (all-taken? game)]}
+  {:pre [(can-score? game)
+         (valid-score? game game-score)]}
   (letfn [(update-player [player score]
             (-> player
                 (assoc :player/score score)

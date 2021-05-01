@@ -1,6 +1,6 @@
 (ns schafkopf.game-test
   (:require [clojure.set :refer [subset?]]
-            [clojure.test :refer [deftest is testing]]
+            [clojure.test :refer [deftest is are testing]]
             [expectations.clojure.test :refer [expect]]
             [schafkopf.game :as game])
   (:import [java.lang AssertionError]))
@@ -91,6 +91,9 @@
     (is (= [trick] (get-in game [:game/players seat :player/tricks])))
     (is (= trick (:game/prev-trick game)))
     (is (= seat (:game/active-seat game)))
+
+    ;; TODO Expect no active seat when the last trick has been taken!
+
     ))
 
 (deftest test-summarize
@@ -102,19 +105,30 @@
     (is (= 120 (reduce + (map :player/points players))))
     ))
 
+(deftest test-valid-score
+  (are [scores expected] (= expected (game/valid-score? (apply make-score scores)))
+    [1 2 3 4 5] false
+    [-1 -2 -3 -4 -5] false
+    [10 10 -10 -10 0] true
+    [-10 -10 -10 -10 40] true
+    [0 0 0 0 0] false))
+
 (deftest test-score
   (let [game (-> (prepare-game) (play-game) (game/summarize))]
+    
+    (expect :schafkopf/game (game/score game (make-score 10 -10 10 -10 0)))
 
     (testing "rejects invalid scores"
       (is (thrown? AssertionError (game/score game (make-score 10 10 10 10 0))))
       (is (thrown? AssertionError (game/score game (make-score 10 -10 10 -10 10))))
 
-    (expect :schafkopf/game (game/score game (make-score 10 -10 10 -10 0)))
+      (testing "rejects negative pot balance"
+        (is (thrown? AssertionError (game/score game (make-score 10 10 10 10 -40)))))
 
-    (testing "associates scores correctly"
-      (let [game (game/score game (make-score 10 10 -10 -10 0))]
-        (is (= [10 10 -10 -10] (mapv :player/score (:game/players game))))
-        (is (zero? (:game/pot-score game)))))
+      (testing "associates scores correctly"
+        (let [game (game/score game (make-score 10 10 -10 -10 0))]
+          (is (= [10 10 -10 -10] (mapv :player/score (:game/players game))))
+          (is (zero? (:game/pot-score game)))))
 
       (let [game (game/score game (make-score -10 -10 -10 -10 40))]
         (is (= [-10 -10 -10 -10] (mapv :player/score (:game/players game))))

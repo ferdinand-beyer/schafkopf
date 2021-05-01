@@ -86,35 +86,38 @@
                      :disabled (not @can-play?)
                      :on-click #(rf/dispatch [::game/play card'])}]))])))))
 
-;; TODO: Avatar, hand, tricks, score, total score
-(def peer
-  (with-styles
-   {:root {}}
-   (fn [{:keys [classes seat]}]
-     (let [name (rf/subscribe [::game/peer-name seat])
-           dealer? (rf/subscribe [::game/peer-dealer? seat])
-           active? (rf/subscribe [::game/peer-active? seat])
-           hand-count (rf/subscribe [::game/peer-hand-count seat])
-           trick-count (rf/subscribe [::game/peer-trick-count seat])
-           tricks-visible? (rf/subscribe [::game/peer-tricks-visible? seat])
-           points (rf/subscribe [::game/peer-points seat])]
-       (fn [_]
-         [mui/card
-          {:classes {:root (:root classes)}}
-          (if (some? @name)
-            [:<>
-             [mui/typography {:variant :h6} @name]
-             (when @dealer?
-               [mui/typography "Geber"])
-             (when @active?
-               [mui/typography "An der Reihe"])
-             [mui/typography "Karten: " @hand-count]
-             [mui/typography "Stiche: " @trick-count]
-             (when @tricks-visible?
-               [mui/button "Stiche ansehen"])
-             (when @points
-               [mui/typography "Punkte: " @points])]
-            [mui/typography "(Unbesetzt)"])])))))
+;; TODO: Avatar
+(defn peer [{:keys [classes seat]}]
+  (let [name (rf/subscribe [::game/peer-name seat])
+        dealer? (rf/subscribe [::game/peer-dealer? seat])
+        active? (rf/subscribe [::game/peer-active? seat])
+        balance (rf/subscribe [::game/peer-balance seat])
+        hand-count (rf/subscribe [::game/peer-hand-count seat])
+        trick-count (rf/subscribe [::game/peer-trick-count seat])
+        tricks-visible? (rf/subscribe [::game/peer-tricks-visible? seat])
+        points (rf/subscribe [::game/peer-points seat])
+        score (rf/subscribe [::game/peer-score seat])]
+    (fn [_]
+      [mui/card
+       {:classes {:root (:root classes)}}
+       (if (some? @name)
+         [:<>
+          [mui/typography {:variant :h6} @name]
+          (when @dealer?
+            [mui/typography "Geber"])
+          (when @active?
+            [mui/typography "An der Reihe"])
+          
+          [mui/typography "Saldo:" @balance]
+          [mui/typography "Karten: " @hand-count]
+          [mui/typography "Stiche: " @trick-count]
+          (when @tricks-visible?
+            [mui/button "Stiche ansehen"])
+          (when @points
+            [mui/typography "Punkte: " @points])
+          (when @score
+            [mui/typography "Bewertung: " @score])]
+         [mui/typography "(Unbesetzt)"])])))
 
 ;; TODO just for demo :)
 (defn card-deco []

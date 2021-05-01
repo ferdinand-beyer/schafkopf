@@ -4,9 +4,12 @@
             [schafkopf.frontend.util :refer [parse-int]]
             [schafkopf.frontend.game.core :as gdb]))
 
-(def initial-score (vec (repeat 5 nil)))
+(def initial-scores (vec (repeat 5 nil)))
 
 (def interceptors [(rf/path ::data)])
+
+(defn scores [raw-scores]
+  (mapv #(parse-int % 0) raw-scores))
 
 ;;;; Event handlers
 
@@ -16,28 +19,30 @@
  (fn [db _]
    (-> db
        (update :scoring? not)
-       (dissoc :scores :error))))
+       (assoc :raw-scores initial-scores)
+       (dissoc :error))))
 
 (rf/reg-event-db
  ::change
  interceptors
  (fn [db [_ seat score]]
-   (update db :scores (fnil assoc initial-score) seat score)))
+   (update db :raw-scores assoc seat score)))
 
 (rf/reg-event-fx
  ::submit
  (fn [{:keys [db]} _]
-   (let [scores (mapv #(parse-int % 0) (get-in db [::data :scores]))
+   (let [scores (scores (get-in db [::data :raw-scores]))
          game-score {:game.score/players (vec (butlast scores))
-                     :game.score/pot (last scores)}]
-     (if (g/valid-score? game-score)
-       (let [{:server/keys [code seqno]} (::gdb/game db)]
+                     :game.score/pot (last scores)}
+         game (::gdb/game db)]
+     (if (g/valid-score? game game-score)
+       (let [{:server/keys [code seqno]} game]
          {:db (update db ::data assoc
                       :error nil
                       :scoring? false)
           :chsk/send [:client/score [code seqno game-score]]})
        {:db (update db ::data assoc
-                    :error "Ungültige Bewertung: Die Summe der Beträge muss null ergeben!")}))))
+                    :error "Ungültige Bewertung!")}))))
 
 ;;;; Subscriptions
 
@@ -45,7 +50,7 @@
  ::can-score?
  :<- [::gdb/game]
  (fn [game _]
-   (g/all-taken? game)))
+   (g/can-score? game)))
 
 (rf/reg-sub
  ::-data
@@ -65,10 +70,16 @@
    (:error db)))
 
 (rf/reg-sub
- ::scores
+ ::raw-scores
  :<- [::-data]
  (fn [db _]
-   (:scores db)))
+   (:raw-scores db)))
+
+(rf/reg-sub
+ ::sum
+ :<- [::raw-scores]
+ (fn [raw-scores _]
+   (reduce + (scores raw-scores))))
 
 (rf/reg-sub
  ::pot-name
@@ -85,6 +96,6 @@
 
 (rf/reg-sub
  ::score
- :<- [::scores]
+ :<- [::raw-scores]
  (fn [scores [_ seat]]
    (nth scores seat)))
