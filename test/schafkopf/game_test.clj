@@ -155,13 +155,13 @@
         (is (= [0 -80 60 20] (mapv :player/balance (:game/players game3))))
         (is (= 0 (:game/pot game3)))))))
 
-(deftest test-next-game
+(deftest test-start-next
   (let [game (-> (prepare-game) (play-game) (game/summarize))]
     
-    (is (thrown? AssertionError (game/next-game game)))
+    (is (thrown? AssertionError (game/start-next game)))
 
     (let [game (game/score game (make-score 10 -10 10 -10 0))
-          next-game (game/next-game game)]
+          next-game (game/start-next game)]
 
       (expect :schafkopf/game game)
 

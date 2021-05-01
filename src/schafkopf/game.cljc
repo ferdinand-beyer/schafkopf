@@ -6,6 +6,8 @@
   "Minimalist Schafkopf game implementation."
   (:require [clojure.spec.alpha :as s]))
 
+;;;; Specs
+
 (def suit? #{:acorns :leaves :hearts :bells})
 (def rank? (into #{:deuce :king :ober :unter} (range 7 11)))
 
@@ -93,10 +95,18 @@
 (def deck (for [suit suit? rank rank?] [rank suit]))
 (def points {:deuce 11, 10 10, :king 4, :ober 3, :unter 2})
 
-;;;; Logic
+;;;; Game inspection
+
+;; TODO: Spec alternatives?
+;; TODO: Name player-publics?
+(s/fdef players
+  :args (s/cat :game (s/alt :game :schafkopf/game-public
+                            :player-game :player/game))
+  :ret (s/coll-of :game/player-public))
 
 (defn players
-  "Takes a game or player-game and returns players or peers."
+  "Takes a game-public (game or player-game) and returns a vector of
+   player-publics (players or peers)."
   [game]
   (or (:game/players game) (:player/peers game)))
 
@@ -124,6 +134,43 @@
        (some :player/score)
        boolean))
 
+(defn round
+  "Returns the current round in the game."
+  [game]
+  (quot (:game/number game) 4))
+
+(defn round-games-left
+  "Returns how many games are left in this round."
+  [game]
+  (rem (:game/number game) 4))
+
+(defn trick-complete?
+  [game]
+  (= (count (:game/active-trick game)) 4))
+
+(defn player-turn?
+  [game seat]
+  (= seat (:game/active-seat game)))
+
+(defn has-card?
+  [game seat card]
+  (-> (get-in game [:game/players seat :player/hand])
+      (contains? card)))
+
+(defn valid-score?
+  ([{:game.score/keys [players pot]}]
+   (and (zero? (reduce + pot players))
+        (not (every? zero? (conj players pot)))))
+  ([game {:game.score/keys [pot] :as game-score}]
+   (and (valid-score? game-score)
+        (not (neg? (+ (:game/pot game) pot))))))
+
+(defn can-score? [game]
+  (and (all-taken? game)
+       (not (scored? game))))
+
+;;;; Initial values
+
 (def initial-player
   #:player {:balance 0
             :hand #{}
@@ -136,6 +183,8 @@
 
 (defn game []
   initial-game)
+
+;;;; Player games
 
 (defn player-peer
   "Returns publicly available information of a player."
@@ -179,22 +228,7 @@
        
        (select-keys player player-keys)))))
 
-;; TODO: Spec alternatives?
-;; TODO: Name player-publics?
-(s/fdef players
-  :args (s/cat :game (s/alt :game :schafkopf/game-public
-                            :player-game :player/game))
-  :ret (s/coll-of :game/player-public))
-
-(defn round
-  "Returns the current round in the game."
-  [game]
-  (quot (:game/number game) 4))
-
-(defn round-games-left
-  "Returns how many games are left in this round."
-  [game]
-  (rem (:game/number game) 4))
+;;;; Utilities
 
 (defn rand-seat []
   (rand-int 4))
@@ -202,7 +236,25 @@
 (defn next-seat [seat]
   (rem (inc seat) 4))
 
-;; TODO: Have a shared (reset)?
+(s/fdef shuffled-deck
+  :ret :game/deck)
+
+(defn shuffled-deck []
+  (shuffle deck))
+
+(defn count-points
+  "Takes any nested structure of ranks, e.g. a collection of cards,
+   and sums up the points."
+  [nested-ranks]
+  (->> nested-ranks flatten (keep points) (reduce +)))
+
+;;;; Start
+
+(s/fdef start
+  :args (s/cat :game :schafkopf/game :dealer-seat (s/? :game/dealer-seat))
+  :ret :schafkopf/game)
+
+;; TODO: Share code with start/start-next/reset?
 (defn start
   ([game] (start game 0))
   ([game dealer-seat]
@@ -211,11 +263,7 @@
           :game/dealer-seat dealer-seat
           :game/active-trick [])))
 
-(s/fdef shuffled-deck
-  :ret :game/deck)
-
-(defn shuffled-deck []
-  (shuffle deck))
+;;;; Deal
 
 (defn partition-packets
   "Deals the deck to n players, in packets of size k, starting at start."
@@ -248,18 +296,7 @@
             :game/active-seat forehand
             :game/players players))))
 
-(defn trick-complete?
-  [game]
-  (= (count (:game/active-trick game)) 4))
-
-(defn player-turn?
-  [game seat]
-  (= seat (:game/active-seat game)))
-
-(defn has-card?
-  [game seat card]
-  (-> (get-in game [:game/players seat :player/hand])
-      (contains? card)))
+;;;; Play
 
 (s/fdef play-card
   :args (s/cat :game :schafkopf/game
@@ -279,6 +316,8 @@
       (dissoc game :game/active-seat)
       (update game :game/active-seat next-seat))))
 
+;;;; Take
+
 (s/fdef take-trick
   :args (s/cat :game :schafkopf/game
                :seat :player/seat)
@@ -297,11 +336,7 @@
                :game/active-seat seat)
         (update-in [:game/players seat :player/tricks] conj trick))))
 
-(defn count-points
-  "Takes any nested structure of ranks, e.g. a collection of cards,
-   and sums up the points."
-  [nested-ranks]
-  (->> nested-ranks flatten (keep points) (reduce +)))
+;;;; Summarize
 
 (defn- update-points [player]
   (->> (:player/tricks player)
@@ -314,17 +349,7 @@
   {:pre [(all-taken? game)]}
   (update game :game/players #(mapv update-points %)))
 
-(defn valid-score?
-  ([{:game.score/keys [players pot]}]
-   (and (zero? (reduce + pot players))
-        (not (every? zero? (conj players pot)))))
-  ([game {:game.score/keys [pot] :as game-score}]
-   (and (valid-score? game-score)
-        (not (neg? (+ (:game/pot game) pot))))))
-
-(defn can-score? [game]
-  (and (all-taken? game)
-       (not (scored? game))))
+;;;; Score
 
 (s/fdef score
   :args (s/cat :game :schafkopf/game
@@ -347,7 +372,9 @@
         (assoc :game/pot-score pot-score)
         (update :game/pot + pot-score))))
 
-(defn next-game [game]
+;;; Start next
+
+(defn start-next [game]
   {:pre [(scored? game)]}
   (-> game
       (update :game/number inc)
