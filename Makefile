@@ -66,9 +66,12 @@ $(JAR): deps.edn $(JS_TARGET) $(CLJ_SRC) $(RES_SRC)
 	clojure -X:uberjar :jar $@
 
 # TODO: Strip manifest.edn from :entries after build?
-$(JS_TARGET): shadow-cljs.edn deps.edn $(CLJS_SRC)
+$(JS_TARGET): shadow-cljs.edn deps.edn $(CLJS_SRC) | node_modules
 	-rm -rf $(JS_TARGET_DIR)
 	clojure -M:cljs:shadow-cljs release app
 
-$(CLJS_TEST_TARGET): deps.edn shadow-cljs.edn $(CLJS_SRC) $(TEST_CLJS_SRC)
+$(CLJS_TEST_TARGET): deps.edn shadow-cljs.edn $(CLJS_SRC) $(TEST_CLJS_SRC) | node_modules
 	clojure -M:cljs:shadow-cljs compile node-test
+
+node_modules:
+	npm install
