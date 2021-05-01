@@ -1,6 +1,6 @@
 (ns schafkopf.frontend.game.core
   (:require [re-frame.core :as rf]
-            [schafkopf.game :as game]
+            [schafkopf.game :as g]
             [schafkopf.protocol :as p]))
 
 ;;;; Server event handlers
@@ -53,7 +53,7 @@
  ::started?
  :<- [::game]
  (fn [game _]
-   (game/started? game)))
+   (g/started? game)))
 
 (rf/reg-sub
  ::code
@@ -175,13 +175,13 @@
  ::peer-hand-count
  subscribe-peer
  (fn [peer _]
-   (game/hand-count peer)))
+   (g/hand-count peer)))
 
 (rf/reg-sub
  ::peer-trick-count
  subscribe-peer
  (fn [peer _]
-   (game/trick-count peer)))
+   (g/trick-count peer)))
 
 (rf/reg-sub
  ::peer-points
@@ -213,17 +213,17 @@
  ::can-play?
  :<- [::game]
  (fn [game _]
-   (and (game/player-turn? game (:player/seat game))
-        (not (game/trick-complete? game)))))
+   (and (g/player-turn? game (:player/seat game))
+        (not (g/trick-complete? game)))))
 
 (rf/reg-sub
  ::can-take?
  :<- [::game]
  (fn [game _]
-   (game/trick-complete? game)))
+   (g/trick-complete? game)))
 
 (rf/reg-sub
  ::can-start-next?
  :<- [::game]
  (fn [game]
-   (game/scored? game)))
+   (g/scored? game)))

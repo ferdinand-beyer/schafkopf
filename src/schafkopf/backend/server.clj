@@ -6,7 +6,7 @@
             [ring.middleware.defaults :as ring-def]
             [ring.middleware.session.cookie :refer [cookie-store]]
             [ring.util.codec :refer [base64-decode]]
-            [taoensso.timbre :as timbre]
+            [taoensso.timbre :as log]
             [schafkopf.backend.api :as api]
             [schafkopf.backend.pages :as pages]))
 
@@ -34,9 +34,9 @@
   {:port port
    :server-header "schafkopf"
    :legacy-return-value? false
-   :event-logger #(timbre/trace %)   
-   :warn-logger #(timbre/warn %2 %1)
-   :error-logger #(timbre/error %2 %1)})
+   :event-logger #(log/trace %)   
+   :warn-logger #(log/warn %2 %1)
+   :error-logger #(log/error %2 %1)})
 
 (mount/defstate server
   :start (http-kit/run-server (ring-handler) server-options)

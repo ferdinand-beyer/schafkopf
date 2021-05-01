@@ -1,7 +1,7 @@
 (ns schafkopf.protocol
   "Utilities for the client-server protocol."
   (:require [clojure.spec.alpha :as s]
-            [schafkopf.game :as game]))
+            [schafkopf.game :as g]))
 
 (s/def :server/code (s/and string? #(<= 4 (count %) 8)))
 (s/def :server/seqno int?)
@@ -34,8 +34,8 @@
 (defn all-present?
   "Returns true when all players are present, false otherwise."
   [game]
-  (every? present? (game/players game)))
+  (every? present? (g/players game)))
 
 (defn can-start? [game]
   (and (all-present? game)
-       (not (game/started? game))))
+       (not (g/started? game))))

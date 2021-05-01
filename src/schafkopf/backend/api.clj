@@ -5,8 +5,8 @@
             [taoensso.sente :as sente]
             [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
             [taoensso.sente.packers.transit :as sente-transit]
-            [taoensso.timbre :as timbre]
-            [schafkopf.backend.control :as ctl]))
+            [taoensso.timbre :as log]
+            [schafkopf.backend.control :as sg]))
 
 (config/def host-name {:default "Host"})
 (config/def host-password {:require true :secret true})
@@ -33,7 +33,7 @@
   (def chsk-send! send-fn))
 
 (defn send-game-event! [uid event]
-  (timbre/debug "Sending game event to user" uid)
+  (log/debug "Sending game event to user" uid)
   (chsk-send! uid event))
 
 ;;;; Message handlers
@@ -41,35 +41,35 @@
 (defmulti -handle-event-message :id)
 
 (defmethod -handle-event-message :default [ev-msg]
-  (timbre/debug "Unhandled message:" (:id ev-msg)))
+  (log/debug "Unhandled message:" (:id ev-msg)))
 
 (defmethod -handle-event-message :chsk/uidport-open [{:keys [uid]}]
-  (timbre/info "Client connected:" uid))
+  (log/info "Client connected:" uid))
 
 (defmethod -handle-event-message :chsk/uidport-close [{:keys [uid]}]
-  (timbre/info "Client disconnected:" uid))
+  (log/info "Client disconnected:" uid))
 
 (defmethod -handle-event-message :chsk/ws-ping [_])
 
 (defmethod -handle-event-message :game/start [{:keys [uid ?data]}]
   (when-let [[code seqno] ?data]
-    (when-let [game (ctl/find-game code)]
-      (ctl/start! game uid seqno))))
+    (when-let [game (sg/find-game code)]
+      (sg/start! game uid seqno))))
 
 (defmethod -handle-event-message :client/play [{:keys [uid ?data]}]
   (when-let [[code seqno card] ?data]
-    (when-let [game (ctl/find-game code)]
-      (ctl/play! game uid seqno card))))
+    (when-let [game (sg/find-game code)]
+      (sg/play! game uid seqno card))))
 
 (defmethod -handle-event-message :client/take [{:keys [uid ?data]}]
   (when-let [[code seqno] ?data]
-    (when-let [game (ctl/find-game code)]
-      (ctl/take! game uid seqno))))
+    (when-let [game (sg/find-game code)]
+      (sg/take! game uid seqno))))
 
 (defmethod -handle-event-message :client/score [{:keys [uid ?data]}]
   (when-let [[code seqno score] ?data]
-    (when-let [game (ctl/find-game code)]
-      (ctl/score! game uid seqno score))))
+    (when-let [game (sg/find-game code)]
+      (sg/score! game uid seqno score))))
 
 ;; TODO :game/reset
 ;; TODO :game/end
@@ -78,7 +78,7 @@
 ;; TODO :client/undo
 
 (defn handle-event-message [{:as ev-msg :keys [uid event]}]
-  (timbre/trace "Received event:" event " - uid:" uid)
+  (log/trace "Received event:" event " - uid:" uid)
   ;; XXX Dispatch in dedicated thread?
   (-handle-event-message ev-msg))
 
@@ -93,9 +93,9 @@
 (defn do-join
   "Lets the connected user join a game, and returns a ring response."
   [session role game name]
-  (let [uid (or (:uid session) (ctl/generate-uid))
+  (let [uid (or (:uid session) (sg/generate-uid))
         send-fn (partial send-game-event! uid)]
-    (if-let [client-game (ctl/join-game! game uid name send-fn)]
+    (if-let [client-game (sg/join! game uid name send-fn)]
       {:status 200
        :body {:role :host
               :game client-game}
@@ -110,19 +110,19 @@
   [{:keys [body-params session]}]
   (if (= host-password (:password body-params))
     (do
-      (timbre/info "Host authentication successful")
-      (do-join session :host (ctl/ensure-game!) host-name))
+      (log/info "Host authentication successful")
+      (do-join session :host (sg/ensure-game!) host-name))
     (do
-      (timbre/info "Host authentication failed (invalid password)")
+      (log/info "Host authentication failed (invalid password)")
       {:status 403
        :body {:error :invalid-credentials}})))
 
 (defn handle-join
   [{:keys [body-params session]}]
   (let [{:keys [code name]} body-params
-        game (ctl/find-game code)]
+        game (sg/find-game code)]
     (cond
-      (not (ctl/valid-name? name))
+      (not (sg/valid-name? name))
       {:status 400
        :body {:error :invalid-name}}
 
@@ -132,7 +132,7 @@
 
       :else
       (do
-        (timbre/info "Guest authentication successful")
+        (log/info "Guest authentication successful")
         (do-join session :guest game name)))))
 
 ;; TODO /api/game -- :get the client-game (on page refresh)

@@ -1,38 +1,37 @@
 (ns user.game-control
   (:require [clojure.string :as str]
-            
-            [schafkopf.backend.control :as ctl]
-            [schafkopf.game :as game]))
+            [schafkopf.backend.control :as sg]
+            [schafkopf.game :as g]))
 
 ;;;; Game info
 
 (defn server-game []
-  @ctl/game-atom)
+  @sg/game-atom)
 
 (defn game []
-  (::ctl/game (server-game)))
+  (::sg/game (server-game)))
 
 (defn client-game [uid]
-  (ctl/client-game (server-game) uid))
+  (sg/client-game (server-game) uid))
 
 (defn seqno []
-  (::ctl/seqno (server-game)))
+  (::sg/seqno (server-game)))
 
 (defn on-seat [seat]
   (->> (server-game)
-       ::ctl/clients
+       ::sg/clients
        vals
-       (filter #(= seat (::ctl/seat %)))
+       (filter #(= seat (::sg/seat %)))
        first))
 
 (defn active-client []
-  (on-seat (get-in (server-game) [::ctl/game :game/active-seat])))
+  (on-seat (get-in (server-game) [::sg/game :game/active-seat])))
 
 (defn active-uid []
-  (::ctl/uid (active-client)))
+  (::sg/uid (active-client)))
 
 (defn rand-uid []
-  (rand-nth (map key (::ctl/clients (server-game)))))
+  (rand-nth (map key (::sg/clients (server-game)))))
 
 (defn expand-fake-uid [uid]
   (if (int? uid)
@@ -54,15 +53,15 @@
 (defn join!
   "Fill the current game with fake clients."
   []
-  (let [game (ctl/ensure-game!)]
+  (let [game (sg/ensure-game!)]
     (doseq [i (range 3)]
-      (ctl/join-game! game
-                      (str "fake-" i)
-                      (str "Fake " i)
-                      (constantly nil)))))
+      (sg/join! game
+                (str "fake-" i)
+                (str "Fake " i)
+                (constantly nil)))))
 
 (defn start! []
-  (ctl/start! ctl/game-atom (rand-uid) (seqno)))
+  (sg/start! sg/game-atom (rand-uid) (seqno)))
 
 (defn play!
   ([] (play! (active-uid)))
@@ -70,7 +69,7 @@
    (let [card (first (:player/hand (client-game uid)))]
      (play! uid card)))
   ([uid card]
-   (ctl/play! ctl/game-atom (expand-fake-uid uid) (seqno) card)))
+   (sg/play! sg/game-atom (expand-fake-uid uid) (seqno) card)))
 
 (defn play-fakes! []
   (let [uid (active-uid)]
@@ -81,15 +80,15 @@
 (defn take!
   ([] (take! (rand-uid)))
   ([uid]
-   (ctl/take! ctl/game-atom (expand-fake-uid uid) (seqno))))
+   (sg/take! sg/game-atom (expand-fake-uid uid) (seqno))))
 
 (defn play-trick! []
   (while-max 4
-             (not (game/trick-complete? (game)))
+             (not (g/trick-complete? (game)))
              (play!)))
 
 (defn play-game! []
   (while-max 8
-             (not (game/all-taken? (game)))
+             (not (g/all-taken? (game)))
              (play-trick!)
              (take!)))

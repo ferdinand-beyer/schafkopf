@@ -13,22 +13,21 @@
             [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
             [clojure.spec.test.alpha :as stest]
-            
+
             [kaocha.repl :as k]
+            [pjstadig.humane-test-output]
 
             [mount.core :as mount]
-            [wrench.core :as wrench]
-            [pjstadig.humane-test-output]
-            [taoensso.timbre :as timbre]
+            [wrench.core :as config]
+            [taoensso.timbre :as log]
             [taoensso.timbre.appenders.core :as appenders]
-            
-            [schafkopf.backend.control :as ctl]
-            [schafkopf.backend.server :as backend]
-            [schafkopf.game :as game]
+
+            [schafkopf.backend.control :as sg]
+            [schafkopf.game :as g]
             [schafkopf.protocol :as protocol]
-            
+
             [user.cljs-build :as cljs-build]
-            [user.game-control :as g]
+            [user.game-control :as ctl]
             [user.util :as util]))
 
 (ns-tools/set-refresh-dirs "src" "dev" "test")
@@ -36,13 +35,10 @@
 (pjstadig.humane-test-output/activate!)
 
 ;; Log to std-out (*out* might be re-bound in threads!)
-(timbre/merge-config!
+(log/merge-config!
  {:appenders {:println (appenders/println-appender {:stream :std-out})}})
 
 (stest/instrument)
-
-(mount/defstate kaocha-runner
-  :start (k/run-all))
 
 (defn app-states []
   (filter #(or (str/starts-with? % "#'schafkopf")
@@ -50,8 +46,9 @@
           (mount/find-all-states)))
 
 (defn start []
-  (wrench/reset! :env (wrench/from-file "dev/config.edn"))
-  (wrench/validate-and-print)
+  (k/run-all)
+  (config/reset! :env (config/from-file "dev/config.edn"))
+  (config/validate-and-print)
   (mount/start))
 
 (defn stop []

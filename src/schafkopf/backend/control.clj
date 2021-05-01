@@ -2,8 +2,8 @@
 (ns schafkopf.backend.control
   (:require [clojure.spec.alpha :as s]
             [mount.core :as mount]
-            [taoensso.timbre :as timbre]
-            [schafkopf.game :as game]
+            [taoensso.timbre :as log]
+            [schafkopf.game :as g]
             ;; for :client/name spec
             [schafkopf.protocol]))
 
@@ -25,7 +25,7 @@
 (defn server-game []
   {::code (generate-code)
    ::seqno 0
-   ::game (game/game)
+   ::game (g/game)
    ::clients {}})
 
 (mount/defstate game-atom
@@ -58,7 +58,7 @@
   [server-game uid]
   (when-let [seat (get-in server-game [::clients uid ::seat])]
     (->
-     (game/player-game (::game server-game) seat)
+     (g/player-game (::game server-game) seat)
      (assoc :server/code (::code server-game)
             :server/seqno (::seqno server-game))
      (populate-peers (::clients server-game)))))
@@ -81,6 +81,19 @@
   :start (add-watch game-atom ::broadcaster broadcaster-watch)
   :stop (remove-watch game-atom ::broadcaster))
 
+(defn- in-sync? [server-game seqno]
+  (= seqno (::seqno server-game)))
+
+(defn- progress [server-game]
+  (update server-game ::seqno inc))
+
+(defn- progressed? [server-game seqno]
+  (= (inc seqno) (::seqno server-game)))
+
+;; TODO: annotate what command was ignored?
+(defn- unchanged [server-game]
+  server-game)
+
 (defn free-seats
   "Returns the set of free seats in a game."
   [server-game]
@@ -91,7 +104,7 @@
 
 ;; TODO: Separate join-game! (for guests) and host-game.
 ;; Mark the host so that clients can refer to them.
-(defn join-game!
+(defn join!
   "Makes a user join a game.  If they are already playing, does nothing.
    Returns the client-game of the joined player, or nil when there are no
    more free seats in the game."
@@ -106,39 +119,26 @@
                                   ::send-fn send-fn
                                   ::name name
                                   ::seat seat})
-                       (update ::seqno inc)))))
+                       (progress)))))
         server-game (swap! game-atom join)]
     (when (some? (get-in server-game [::clients uid]))
-      (timbre/info "User" uid "joined game" (::code server-game))
+      (log/info "User" uid "joined game" (::code server-game))
       (client-game server-game uid))))
-
-(defn- in-sync? [server-game seqno]
-  (= seqno (::seqno server-game)))
-
-(defn- progress [server-game]
-  (update server-game ::seqno inc))
-
-(defn- progressed? [server-game seqno]
-  (= (inc seqno) (::seqno server-game)))
-
-;; TODO: annotate what command was ignored?
-(defn- unchanged [server-game]
-  server-game)
 
 (defn can-start? [server-game]
   (and (= 4 (count (::clients server-game)))
-       (not (game/started? (::game server-game)))))
+       (not (g/started? (::game server-game)))))
 
 (defn start [server-game seqno]
   (if (and (in-sync? server-game seqno)
            (can-start? server-game))
-    (let [dealer-seat (game/rand-seat)
-          deck (game/shuffled-deck)]
+    (let [dealer-seat (g/rand-seat)
+          deck (g/shuffled-deck)]
       (-> server-game
           (update ::game
                   #(-> %
-                       (game/start dealer-seat)
-                       (game/deal deck)))
+                       (g/start dealer-seat)
+                       (g/deal deck)))
           (progress)))
     (unchanged server-game)))
 
@@ -146,41 +146,41 @@
 (defn start! [game-atom uid seqno]
   (let [server-game (swap! game-atom start seqno)]
     (when (progressed? server-game seqno)
-      (timbre/info "User" uid "started game" (::code server-game)))))
+      (log/info "User" uid "started game" (::code server-game)))))
 
 (defn can-play? [server-game seat card]
   (let [game (::game server-game)]
-    (and (not (game/trick-complete? game))
-         (game/player-turn? game seat)
-         (game/has-card? game seat card))))
+    (and (not (g/trick-complete? game))
+         (g/player-turn? game seat)
+         (g/has-card? game seat card))))
 
 (defn play [server-game uid seqno card]
   (let [seat (get-in server-game [::clients uid ::seat])]
     (if (and (in-sync? server-game seqno)
              (can-play? server-game seat card))
       (-> server-game
-          (update ::game game/play-card card)
+          (update ::game g/play-card card)
           (progress))
       (unchanged server-game))))
 
 (defn play! [game-atom uid seqno card]
   (let [server-game (swap! game-atom play uid seqno card)]
     (when (progressed? server-game seqno)
-      (timbre/info "User" uid "played card" card))))
+      (log/info "User" uid "played card" card))))
 
 (defn can-take? [server-game]
   (let [game (::game server-game)]
-    (game/trick-complete? game)))
+    (g/trick-complete? game)))
 
 (defn take-trick [server-game uid seqno]
   (let [seat (get-in server-game [::clients uid ::seat])]
     (if (and (in-sync? server-game seqno)
              (can-take? server-game))
-      (let [server-game (update server-game ::game game/take-trick seat)
+      (let [server-game (update server-game ::game g/take-trick seat)
             game (::game server-game)]
         (cond-> server-game
-          (game/all-taken? game)
-          (update ::game game/summarize)
+          (g/all-taken? game)
+          (update ::game g/summarize)
 
           :finally (progress)))
       (unchanged server-game))))
@@ -188,22 +188,22 @@
 (defn take! [game-atom uid seqno]
   (let [server-game (swap! game-atom take-trick uid seqno)]
     (when (progressed? server-game seqno)
-      (timbre/info "User" uid "took the trick"))))
+      (log/info "User" uid "took the trick"))))
 
 (defn can-score? [server-game score]
   (let [game (::game server-game)]
-    (and (game/can-score? game)
-         (game/valid-score? game score))))
+    (and (g/can-score? game)
+         (g/valid-score? game score))))
 
 (defn score [server-game seqno score]
   (if (and (in-sync? server-game seqno)
            (can-score? server-game score))
     (-> server-game
-        (update ::game game/score score)
+        (update ::game g/score score)
         (progress))
     (unchanged server-game)))
 
 (defn score! [game-atom uid seqno game-score]
   (let [server-game (swap! game-atom score seqno game-score)]
     (when (progressed? server-game seqno)
-      (timbre/info "User" uid "scored the game"))))
+      (log/info "User" uid "scored the game"))))

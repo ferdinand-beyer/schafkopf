@@ -26,7 +26,9 @@
  ::change
  interceptors
  (fn [db [_ seat score]]
-   (update db :raw-scores assoc seat score)))
+   (-> db
+       (update :raw-scores assoc seat score)
+       (dissoc :error))))
 
 (rf/reg-event-fx
  ::submit

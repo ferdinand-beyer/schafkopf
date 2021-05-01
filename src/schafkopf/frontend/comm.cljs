@@ -4,7 +4,7 @@
             [day8.re-frame.http-fx]
             [taoensso.sente :as sente]
             [taoensso.sente.packers.transit :as sente-transit]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as log]))
 
 (def anti-forgery-token
   (some-> (.querySelector js/document "meta[name=csrf-token]") (.-content)))
@@ -35,28 +35,28 @@
 
 (defmethod -handle-event! :default
   [{:keys [id event]}]
-  (timbre/trace "Relaying event:" id)
+  (log/trace "Relaying event:" id)
   (some-> event (rf/dispatch)))
 
 (defmethod -handle-event! :chsk/handshake
   [{:keys [?data]}]
-  (timbre/debug "Handshake: " ?data))
+  (log/debug "Handshake: " ?data))
 
 ;; TODO: Fetch game state on re-connect?
 (defmethod -handle-event! :chsk/state
   [{:keys [?data]}]
   (let [[_ new-state-map] ?data]
     (if (:first-open? new-state-map)
-      (timbre/info "Channel socket successfully established:" new-state-map)
-      (timbre/debug "Channel socket state change:" new-state-map))))
+      (log/info "Channel socket successfully established:" new-state-map)
+      (log/debug "Channel socket state change:" new-state-map))))
 
 (defmethod -handle-event! :chsk/recv
   [{:keys [?data]}]
-  (timbre/warn "Unhandled :chsk/recv event:" ?data))
+  (log/warn "Unhandled :chsk/recv event:" ?data))
 
 (defmethod -handle-event! :chsk/ws-ping
   [{:keys [event]}]
-  (timbre/trace "Received:" event))
+  (log/trace "Received:" event))
 
 (defn handle-event! [ev-msg]
   (-handle-event! ev-msg))
@@ -65,7 +65,7 @@
   (swap! channel-socket
          (fn [old-map]
            (when-let [{:keys [chsk stop-router-fn]} old-map]
-             (timbre/debug "Disconnecting channel socket")
+             (log/debug "Disconnecting channel socket")
              (stop-router-fn)
              (sente/chsk-disconnect! chsk))
            new-map)))
@@ -84,22 +84,22 @@
 (defn send! [event dispatch-reply]
   (if-let [send-fn (:send-fn @channel-socket)]
     (do
-      (timbre/info "Sending socket event:" event)
+      (log/info "Sending socket event:" event)
       (let [reply-fn
             (when dispatch-reply
               (fn [reply]
                 (if (sente/cb-success? reply)
                   (rf/dispatch (conj dispatch-reply reply))
-                  (timbre/warn "Failed receiving reply to:" event
+                  (log/warn "Failed receiving reply to:" event
                                "-" reply))))]
         (send-fn event 5000 reply-fn)))
     ;; Not connected - only in dev when the namespace is reloaded?
-    (timbre/warn "Cannot send event:" event "- chsk:" @channel-socket)))
+    (log/warn "Cannot send event:" event "- chsk:" @channel-socket)))
 
 (rf/reg-fx
  :chsk/connect
  (fn [_]
-   (timbre/info "Connecting channel socket")
+   (log/info "Connecting channel socket")
    (connect-channel-socket!)))
 
 (rf/reg-fx
