@@ -28,6 +28,13 @@
   #:game.score {:players [p0 p1 p2 p3]
                 :pot pot})
 
+(defn unscore
+  "Removes scores for testing purposes."
+  [game]
+  (-> game
+      (dissoc :game/pot-score)
+      (update :game/players (partial mapv #(dissoc % :player/score)))))
+
 ;;;; Tests
 
 (deftest test-new-game
@@ -136,8 +143,8 @@
 
     (testing "adds scores to balances"
       (let [game1 (game/score game (make-score -50 -50 50 50 0))
-            game2 (game/score game1 (make-score -10 -10 -10 -10 40))
-            game3 (game/score game2 (make-score 60 -20 20 -20 -40))]
+            game2 (game/score (unscore game1) (make-score -10 -10 -10 -10 40))
+            game3 (game/score (unscore game2) (make-score 60 -20 20 -20 -40))]
 
         (is (= [-50 -50 50 50] (mapv :player/balance (:game/players game1))))
         (is (= 0 (:game/pot game1)))
