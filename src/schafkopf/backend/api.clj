@@ -66,10 +66,14 @@
     (when-let [game (ctl/find-game code)]
       (ctl/take! game uid seqno))))
 
+(defmethod -handle-event-message :client/score [{:keys [uid ?data]}]
+  (when-let [[code seqno score] ?data]
+    (when-let [game (ctl/find-game code)]
+      (ctl/score! game uid seqno score))))
+
 ;; TODO :game/reset
 ;; TODO :game/end
 
-;; TODO :client/score
 ;; TODO :client/next
 ;; TODO :client/undo
 

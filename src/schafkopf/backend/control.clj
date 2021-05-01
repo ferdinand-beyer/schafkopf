@@ -189,3 +189,21 @@
   (let [server-game (swap! game-atom take-trick uid seqno)]
     (when (progressed? server-game seqno)
       (timbre/info "User" uid "took the trick"))))
+
+(defn can-score? [server-game score]
+  (let [game (::game server-game)]
+    (and (game/all-taken? game)
+         (game/valid-score? score))))
+
+(defn score [server-game seqno score]
+  (if (and (in-sync? server-game seqno)
+           (can-score? server-game score))
+    (-> server-game
+        (update ::game game/score score)
+        (progress))
+    (unchanged server-game)))
+
+(defn score! [game-atom uid seqno game-score]
+  (let [server-game (swap! game-atom score seqno game-score)]
+    (when (progressed? server-game seqno)
+      (timbre/info "User" uid "scored the game"))))
