@@ -284,6 +284,7 @@
                :seat :player/seat)
   :ret :schafkopf/game)
 
+;; TODO: When all taken, remove: active seat, active trick, previous trick
 (defn take-trick
   "Updates the game when the given player takes the current trick."
   [game seat]
@@ -346,4 +347,13 @@
         (assoc :game/pot-score pot-score)
         (update :game/pot + pot-score))))
 
-(defn next-game [game])
+(defn next-game [game]
+  {:pre [(scored? game)]}
+  (-> game
+      (update :game/number inc)
+      (update :game/dealer-seat next-seat)
+      (dissoc :game/pot-score :game/active-seat :game/prev-trick)
+      (update :game/players
+              (partial mapv #(-> %
+                                 (dissoc :player/points :player/score)
+                                 (assoc :player/tricks []))))))

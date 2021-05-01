@@ -147,3 +147,26 @@
 
         (is (= [0 -80 60 20] (mapv :player/balance (:game/players game3))))
         (is (= 0 (:game/pot game3)))))))
+
+(deftest test-next-game
+  (let [game (-> (prepare-game) (play-game) (game/summarize))]
+    
+    (is (thrown? AssertionError (game/next-game game)))
+
+    (let [game (game/score game (make-score 10 -10 10 -10 0))
+          next-game (game/next-game game)]
+
+      (expect :schafkopf/game game)
+
+      (is (= 1 (:game/number next-game)))
+      (is (= 1 (:game/dealer-seat next-game)))
+      (is (= [] (:game/active-trick next-game)))
+      (is (not (contains? next-game :game/pot-score)))
+      (is (not (contains? next-game :game/active-seat)))
+      (is (not (contains? next-game :game/prev-trick)))
+
+      (doseq [player (:game/players next-game)]
+        (is (empty? (:player/hand player)))
+        (is (= [] (:player/tricks player)))
+        (is (not (contains? player :player/points)))
+        (is (not (contains? player :player/score)))))))
