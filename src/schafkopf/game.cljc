@@ -95,12 +95,25 @@
 
 ;;;; Logic
 
+(defn players
+  "Takes a game or player-game and returns players or peers."
+  [game]
+  (or (:game/players game) (:player/peers game)))
+
+(defn hand-count [player]
+  (or (:player/hand-count player)
+      (count (:player/hand player))))
+
+(defn trick-count [player]
+  (or (:player/trick-count player)
+      (count (:player/tricks player))))
+
 (defn started? [game]
   (some? (:game/dealer-seat game)))
 
 (defn tricks-taken [game]
-  (->> (:game/players game)
-       (map (comp count :player/tricks))
+  (->> (players game)
+       (map trick-count)
        (reduce +)))
 
 (defn all-taken? [game]
@@ -172,19 +185,6 @@
   :args (s/cat :game (s/alt :game :schafkopf/game-public
                             :player-game :player/game))
   :ret (s/coll-of :game/player-public))
-
-(defn players
-  "Takes a game or player-game and returns players or peers."
-  [game]
-  (or (:game/players game) (:player/peers game)))
-
-(defn hand-count [player]
-  (or (:player/hand-count player)
-      (count (:player/hand player))))
-
-(defn trick-count [player]
-  (or (:player/trick-count player)
-      (count (:player/trick player))))
 
 (defn round
   "Returns the current round in the game."
@@ -313,6 +313,7 @@
   {:pre [(all-taken? game)]}
   (update game :game/players #(mapv update-points %)))
 
+;; TODO: But not all must be zero :)
 (defn valid-score?
   [{:game.score/keys [players pot]}]
   (zero? (reduce + pot players)))
@@ -327,7 +328,8 @@
   [game {player-scores :game.score/players
          pot-score :game.score/pot
          :as game-score}]
-  {:pre [(valid-score? game-score)]}
+  {:pre [(valid-score? game-score)
+         (all-taken? game)]}
   (letfn [(update-player [player score]
             (-> player
                 (assoc :player/score score)

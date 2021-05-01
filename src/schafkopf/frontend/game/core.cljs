@@ -101,7 +101,7 @@
    (:player/hand game)))
 
 (rf/reg-sub
- ::tricks-visible?
+ ::can-see-tricks?
  :<- [::game]
  (fn [game _]
    (some? (:player/tricks game))))

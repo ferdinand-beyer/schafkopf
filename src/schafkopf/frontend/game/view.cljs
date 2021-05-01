@@ -6,7 +6,11 @@
             ;; TODO require MUI components selectively!
             [mui-bien.core.all :as mui]
             [mui-bien.core.styles :refer [with-styles]]
-            [schafkopf.frontend.game.core :as game]))
+
+            [schafkopf.frontend.game.core :as game]
+            [schafkopf.frontend.game.score :as score]
+
+            [schafkopf.frontend.game.views.scoring :refer [score-button]]))
 
 (def suit-names {:acorns "Eichel"
                  :leaves "Gras"
@@ -217,12 +221,16 @@
          "Stich nehmen"]])]))
 
 (defn center []
-  (let [can-start? @(rf/subscribe [::game/can-start?])
-        started? @(rf/subscribe [::game/started?])
-        tricks-visible? @(rf/subscribe [::game/tricks-visible?])]
+  (let [started? @(rf/subscribe [::game/started?])
+        can-start? @(rf/subscribe [::game/can-start?])
+        tricks-visible? @(rf/subscribe [::game/can-see-tricks?])
+        can-score? @(rf/subscribe [::score/can-score?])]
     (cond
       tricks-visible?
-      [player-tricks]
+      [:div
+       [player-tricks]
+       (when can-score?
+         [score-button])]
 
       started?
       [active-trick]
