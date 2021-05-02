@@ -38,11 +38,11 @@
                      :game.score/pot (last scores)}
          game (::gdb/game db)]
      (if (g/valid-score? game game-score)
-       (let [{:server/keys [code seqno]} game]
+       (let [{:server/keys [game-id seqno]} game]
          {:db (update db ::data assoc
                       :error nil
                       :scoring? false)
-          :chsk/send [:client/score [code seqno game-score]]})
+          :chsk-send [:client/score [game-id seqno game-score]]})
        {:db (update db ::data assoc
                     :error "Ungültige Bewertung!")}))))
 

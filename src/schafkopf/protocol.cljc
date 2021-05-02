@@ -1,14 +1,40 @@
 (ns schafkopf.protocol
   "Utilities for the client-server protocol."
   (:require [clojure.spec.alpha :as s]
+            [clojure.string :as str]
             [schafkopf.game :as g]))
 
-(s/def :server/code (s/and string? #(<= 4 (count %) 8)))
+;;;; Server API
+
+(def not-blank? (complement str/blank?))
+
+(s/def ::name (s/and string? #(<= 1 (count %) 20)))
+(s/def ::password (s/and string? not-blank?))
+(s/def ::join-code (s/and string? #(<= 4 (count %) 8)))
+
+(s/def ::error #{:invalid-params
+                 :invalid-credentials
+                 :join-failed})
+
+(s/def ::error-response (s/keys :req-un [::error]))
+
+(s/def ::host-params (s/keys :req-un [::name ::password]))
+(s/def ::join-params (s/keys :req-un [::name ::join-code]))
+
+;;;; Client game
+
+(s/def :server/game-id string?)
+(s/def :server/join-code ::join-code)
 (s/def :server/seqno int?)
 
-(s/def :server/info (s/keys :req [:server/code :server/seqno]))
+(s/def :server/info (s/keys :req [:server/game-id
+                                  :server/join-code
+                                  :server/seqno]))
 
-(s/def :client/name (s/and string? #(<= 2 (count %) 20)))
+(s/def :client/client-id string?)
+(s/def :client/name ::name)
+
+(s/def :client/info (s/keys :req [:client/client-id]))
 
 (s/def :client/peer
   (s/merge :player/peer
@@ -29,6 +55,7 @@
 (s/def :client/game
   (s/merge :player/game
            :server/info
+           :client/info
            :client/peer))
 
 (defn all-present?

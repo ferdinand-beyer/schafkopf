@@ -268,17 +268,16 @@
        [:p "Warten auf weitere Teilnehmer..."]])))
 
 (defn game-info []
-  (let [code (rf/subscribe [::game/code])
+  (let [join-code (rf/subscribe [::game/join-code])
         number (rf/subscribe [::game/number])
         round (rf/subscribe [::game/round])]
     [:<>
      [mui/typography
       {:variant :h5}
       "Schafkopf"]
-     [mui/typography
-      [:div "Raumcode: " [:strong @code]]
-      [:div "Spiel: " @number]
-      [:div "Runde: " @round]]]))
+     [mui/typography "Raumcode: " [:strong @join-code]]
+     [mui/typography "Spiel: " @number]
+     [mui/typography "Runde: " @round]]))
 
 (def game-screen
   (with-styles

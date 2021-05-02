@@ -1,39 +1,46 @@
 (ns schafkopf.backend.api
-  (:require [mount.core :as mount]
-            [muuntaja.middleware :refer [wrap-format]]
+  (:require [clojure.spec.alpha :as s]
+
+            [mount.core :as mount]
             [wrench.core :as config]
-            [taoensso.sente :as sente]
-            [taoensso.sente.server-adapters.http-kit :refer (get-sch-adapter)]
-            [taoensso.sente.packers.transit :as sente-transit]
             [taoensso.timbre :as log]
+
+            [muuntaja.middleware :refer [wrap-format]]
+            [ring.util.response :as resp]
+
+            [taoensso.sente :as sente]
+            [taoensso.sente.server-adapters.http-kit :refer [get-sch-adapter]]
+            [taoensso.sente.packers.transit :as sente-transit]
+
+            [schafkopf.protocol :as protocol]
             [schafkopf.backend.game :as sg]))
 
-(config/def host-name {:default "Host"})
+;;;; Config etc.
+
 (config/def host-password {:require true :secret true})
 
-;;;; Channel sockets
+(defn active-player? [request]
+  (let [{:keys [game-id uid]} (request :session)]
+    (some-> game-id
+            (sg/find-game-by-id)
+            (sg/client? uid))))
 
-(defn channel-socket-authorized?
-  "Returns true if the user is authorized to establish a channel socket,
-   false otherwise."
-  [req]
-  ;; TODO: Check for valid game ID + if the user is a player
-  (some? (get-in req [:session :uid])))
+;;;; Channel sockets
 
 (let [{:keys [ch-recv send-fn
               ajax-post-fn ajax-get-or-ws-handshake-fn]}
       (sente/make-channel-socket-server!
        (get-sch-adapter)
-       {:authorized?-fn channel-socket-authorized?
+       {:authorized?-fn active-player?
         :packer (sente-transit/get-transit-packer)})]
-  
+
   (def chsk-ajax-post ajax-post-fn)
   (def chsk-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
   (def ch-recv ch-recv)
   (def chsk-send! send-fn))
 
 (defn send-game-event! [uid event]
-  (log/debug "Sending game event to user" uid)
+  (log/debug "Sending" (first event) "to user" uid)
   (chsk-send! uid event))
 
 ;;;; Message handlers
@@ -51,33 +58,35 @@
 
 (defmethod -handle-event-message :chsk/ws-ping [_])
 
+;; TODO: Conform ?data of each custom event!
+
 (defmethod -handle-event-message :game/start [{:keys [uid ?data]}]
-  (when-let [[code seqno] ?data]
-    (when-let [game (sg/find-game code)]
+  (when-let [[game-id seqno] ?data]
+    (when-let [game (sg/find-game-by-id game-id)]
       (sg/start! game uid seqno))))
-
-(defmethod -handle-event-message :client/play [{:keys [uid ?data]}]
-  (when-let [[code seqno card] ?data]
-    (when-let [game (sg/find-game code)]
-      (sg/play! game uid seqno card))))
-
-(defmethod -handle-event-message :client/take [{:keys [uid ?data]}]
-  (when-let [[code seqno] ?data]
-    (when-let [game (sg/find-game code)]
-      (sg/take! game uid seqno))))
-
-(defmethod -handle-event-message :client/score [{:keys [uid ?data]}]
-  (when-let [[code seqno score] ?data]
-    (when-let [game (sg/find-game code)]
-      (sg/score! game uid seqno score))))
-
-(defmethod -handle-event-message :client/start-next [{:keys [uid ?data]}]
-  (when-let [[code seqno] ?data]
-    (when-let [game (sg/find-game code)]
-      (sg/start-next! game uid seqno))))
 
 ;; TODO :game/reset
 ;; TODO :game/end
+
+(defmethod -handle-event-message :client/play [{:keys [uid ?data]}]
+  (when-let [[game-id seqno card] ?data]
+    (when-let [game (sg/find-game-by-id game-id)]
+      (sg/play! game uid seqno card))))
+
+(defmethod -handle-event-message :client/take [{:keys [uid ?data]}]
+  (when-let [[game-id seqno] ?data]
+    (when-let [game (sg/find-game-by-id game-id)]
+      (sg/take! game uid seqno))))
+
+(defmethod -handle-event-message :client/score [{:keys [uid ?data]}]
+  (when-let [[game-id seqno score] ?data]
+    (when-let [game (sg/find-game-by-id game-id)]
+      (sg/score! game uid seqno score))))
+
+(defmethod -handle-event-message :client/start-next [{:keys [uid ?data]}]
+  (when-let [[game-id seqno] ?data]
+    (when-let [game (sg/find-game-by-id game-id)]
+      (sg/start-next! game uid seqno))))
 
 ;; TODO :client/undo
 
@@ -90,54 +99,67 @@
   :start (sente/start-server-chsk-router! ch-recv handle-event-message)
   :stop (event-router))
 
-;;; Ring handlers
+;;;; Ring handlers
 
-;; TODO: Move more of this logic to control.
-;; Guests join, hosts _create_ games.
-(defn do-join
-  "Lets the connected user join a game, and returns a ring response."
-  [session role game name]
-  (let [uid (or (:uid session) (sg/generate-uid))
-        send-fn (partial send-game-event! uid)]
-    (if-let [client-game (sg/join! game uid name send-fn)]
-      {:status 200
-       :body {:role :host
-              :game client-game}
-       :session (assoc session
-                       :role role
-                       :uid uid
-                       :code (:server/code client-game))}
-      {:status 400
-       :body {:error :game-full}})))
+(defn- make-uid [session]
+  (or (session :uid) (sg/generate-id)))
+
+(defn- error-response [status error]
+  {:status status
+   :headers {}
+   :body {:error error}})
+
+(defn- invalid-params []
+  (error-response 400 :invalid-params))
+
+(defn- invalid-credentials []
+  (error-response 403 :invalid-credentials))
+
+(defn- join-response
+  [{:keys [session]}
+   {:client/keys [client-id]
+    :server/keys [game-id]
+    :as client-game}]
+  (assoc (resp/response client-game)
+         :session (assoc session :game-id game-id :uid client-id)))
+
+;;;; TODO: Middleware factory to conform body-params with a spec?
 
 (defn handle-host
-  [{:keys [body-params session]}]
-  (if (= host-password (:password body-params))
-    (do
-      (log/info "Host authentication successful")
-      (do-join session :host (sg/ensure-game!) host-name))
-    (do
-      (log/info "Host authentication failed (invalid password)")
-      {:status 403
-       :body {:error :invalid-credentials}})))
-
-(defn handle-join
-  [{:keys [body-params session]}]
-  (let [{:keys [code name]} body-params
-        game (sg/find-game code)]
+  [{:keys [body-params session]
+    :as request}]
+  (let [{:keys [name password] :as params}
+        (s/conform ::protocol/host-params body-params)]
     (cond
-      (not (sg/valid-name? name))
-      {:status 400
-       :body {:error :invalid-name}}
+      (s/invalid? params)
+      (invalid-params)
 
-      (nil? game)
-      {:status 403
-       :body {:error :invalid-code}}
+      (not= password host-password)
+      (invalid-credentials)
 
       :else
-      (do
-        (log/info "Guest authentication successful")
-        (do-join session :guest game name)))))
+      (let [uid (make-uid session)
+            send-fn (partial send-game-event! uid)
+            client-game (sg/host! uid name send-fn)]
+        (join-response request client-game)))))
+
+(defn handle-join
+  [{:keys [body-params session]
+    :as request}]
+  (let [{:keys [name join-code] :as params}
+        (s/conform ::protocol/join-params body-params)]
+    (if (s/invalid? params)
+      ;; We could look in s/explain-data [::s/problems ::s/path]
+      ;; to report back which param was wrong, to display to the user.
+      (invalid-params)
+      (if-let [game (sg/find-game-by-join-code join-code)]
+        (let [uid (make-uid session)
+              send-fn (partial send-game-event! uid)
+              client-game (sg/join! game uid name send-fn)]
+          (if (some? client-game)
+            (join-response request client-game)
+            (error-response 409 :join-failed)))
+        (invalid-credentials)))))
 
 ;; TODO /api/game -- :get the client-game (on page refresh)
 ;; TODO /api/leave -- leave the game (need to update session state)

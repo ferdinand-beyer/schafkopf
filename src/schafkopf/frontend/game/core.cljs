@@ -3,6 +3,20 @@
             [schafkopf.game :as g]
             [schafkopf.protocol :as p]))
 
+;;;; Re-frame helpers
+
+(defn reg-event-chsk
+  "Registers a re-frame event handler that returns a chsk-send effect.
+   The event to send is automatically enriched by game-id and seqno."
+  [id handler-fn]
+  (rf/reg-event-fx
+   id
+   (fn [{{{:server/keys [game-id seqno]} ::game} :db
+         :as coeffects}
+        event]
+     (let [[ev-id ?args] (handler-fn coeffects event)]
+       {:chsk-send [ev-id (into [game-id seqno] ?args)]}))))
+
 ;;;; Server event handlers
 
 (rf/reg-event-db
@@ -10,37 +24,40 @@
  (fn [db [_ game]]
    (assoc db ::game game)))
 
+(rf/reg-event-fx
+ :game/stop
+ (fn [db _]
+   ;; TODO: Display message to the user before removing the game state!
+   {:db (dissoc db ::game)
+    :chsk-disconnect nil}))
+
 ;;;; UI event handlers
 
 (rf/reg-event-fx
  ::init
  (fn [{:keys [db]} [_ game]]
    {:db (assoc db ::game game)
-    :chsk/connect nil}))
+    :chsk-connect nil}))
 
-(rf/reg-event-fx
+(reg-event-chsk
  ::start
- (fn [{:keys [db]} _]
-   (let [{:server/keys [code seqno]} (::game db)]
-     {:chsk/send [:game/start [code seqno]]})))
+ (fn [_ _]
+   [:game/start]))
 
-(rf/reg-event-fx
+(reg-event-chsk
  ::play
- (fn [{:keys [db]} [_ card]]
-   (let [{:server/keys [code seqno]} (::game db)]
-     {:chsk/send [:client/play [code seqno card]]})))
+ (fn [_ [_ card]]
+   [:client/play [card]]))
 
-(rf/reg-event-fx
+(reg-event-chsk
  ::take
- (fn [{:keys [db]} _]
-   (let [{:server/keys [code seqno]} (::game db)]
-     {:chsk/send [:client/take [code seqno]]})))
+ (fn [_ _]
+   [:client/take]))
 
-(rf/reg-event-fx
+(reg-event-chsk
  ::start-next
- (fn [{:keys [db]} _]
-   (let [{:server/keys [code seqno]} (::game db)]
-     {:chsk/send [:client/start-next [code seqno]]})))
+ (fn [_ _]
+   [:client/start-next]))
 
 ;;;; Game subscriptions
 
@@ -62,10 +79,10 @@
    (g/started? game)))
 
 (rf/reg-sub
- ::code
+ ::join-code
  :<- [::game]
  (fn [game _]
-   (:server/code game)))
+   (:server/join-code game)))
 
 (rf/reg-sub
  ::number

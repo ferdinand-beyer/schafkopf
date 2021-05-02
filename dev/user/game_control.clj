@@ -5,14 +5,17 @@
 
 ;;;; Game info
 
+(defn game-atom []
+  sg/game-atom)
+
 (defn server-game []
-  @sg/game-atom)
+  @(game-atom))
 
 (defn game []
   (::sg/game (server-game)))
 
-(defn client-game [uid]
-  (sg/client-game (server-game) uid))
+(defn client-game [client-id]
+  (sg/client-game (server-game) client-id))
 
 (defn seqno []
   (::sg/seqno (server-game)))
@@ -27,19 +30,19 @@
 (defn active-client []
   (on-seat (get-in (server-game) [::sg/game :game/active-seat])))
 
-(defn active-uid []
-  (::sg/uid (active-client)))
+(defn active-client-id []
+  (::sg/client-id (active-client)))
 
-(defn rand-uid []
+(defn rand-client-id []
   (rand-nth (map key (::sg/clients (server-game)))))
 
-(defn expand-fake-uid [uid]
-  (if (int? uid)
-    (str "fake-" uid)
-    uid))
+(defn expand-fake-client-id [client-id]
+  (if (int? client-id)
+    (str "fake-" client-id)
+    client-id))
 
-(defn rand-fake-uid []
-  (expand-fake-uid (rand-int 3)))
+(defn rand-fake-client-id []
+  (expand-fake-client-id (rand-int 3)))
 
 (defmacro while-max
   [max test & body]
@@ -50,37 +53,45 @@
 
 ;;;; Game simulation
 
+(defn receive-event [_])
+
+(defn host!
+  []
+  (sg/host! "fake-host" "Fake Host" receive-event))
+
 (defn join!
   "Fill the current game with fake clients."
-  []
-  (let [game (sg/ensure-game!)]
-    (doseq [i (range 3)]
-      (sg/join! game
-                (str "fake-" i)
-                (str "Fake " i)
-                (constantly nil)))))
+  ([] (join! 3))
+  ([n]
+   (let [game (game-atom)]
+     (when (some? @game)
+       (doseq [i (range n)]
+         (sg/join! game
+                   (str "fake-" i)
+                   (str "Fake " i)
+                   receive-event))))))
 
 (defn start! []
-  (sg/start! sg/game-atom (rand-uid) (seqno)))
+  (sg/start! (game-atom) (rand-client-id) (seqno)))
 
 (defn play!
-  ([] (play! (active-uid)))
-  ([uid]
-   (let [card (first (:player/hand (client-game uid)))]
-     (play! uid card)))
-  ([uid card]
-   (sg/play! sg/game-atom (expand-fake-uid uid) (seqno) card)))
+  ([] (play! (active-client-id)))
+  ([client-id]
+   (let [card (first (:player/hand (client-game client-id)))]
+     (play! client-id card)))
+  ([client-id card]
+   (sg/play! (game-atom) (expand-fake-client-id client-id) (seqno) card)))
 
 (defn play-fakes! []
-  (let [uid (active-uid)]
+  (let [client-id (active-client-id)]
     (while-max 3
-               (str/starts-with? uid "fake-")
+               (str/starts-with? client-id "fake-")
                (play!))))
 
 (defn take!
-  ([] (take! (rand-uid)))
-  ([uid]
-   (sg/take! sg/game-atom (expand-fake-uid uid) (seqno))))
+  ([] (take! (rand-client-id)))
+  ([client-id]
+   (sg/take! (game-atom) (expand-fake-client-id client-id) (seqno))))
 
 (defn play-trick! []
   (while-max 4

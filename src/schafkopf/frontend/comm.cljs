@@ -97,13 +97,19 @@
     (log/warn "Cannot send event:" event "- chsk:" @channel-socket)))
 
 (rf/reg-fx
- :chsk/connect
+ :chsk-connect
  (fn [_]
    (log/info "Connecting channel socket")
    (connect-channel-socket!)))
 
 (rf/reg-fx
- :chsk/send
+ :chsk-disconnect
+ (fn [_]
+   (log/info "Disconnecting channel socket")
+   (replace-channel-socket! nil)))
+
+(rf/reg-fx
+ :chsk-send
  (fn [msg]
    (if (map? msg)
      (send! (:event msg) (:on-reply msg))
