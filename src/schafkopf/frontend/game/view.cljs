@@ -72,7 +72,8 @@
 (def hand
   (with-styles
     {:root {:display :flex
-            :flex-direction :row}}
+            :flex-direction :row
+            :justify-content :center}}
     (fn [{:keys [classes]}]
       (let [hand (rf/subscribe [::game/hand])
             can-play? (rf/subscribe [::game/can-play?])]
@@ -171,6 +172,25 @@
      [mui/grid
       {:item true}
       [card {:card card'}]])])
+
+(defn prev-trick-button []
+  (let [prev-trick (rf/subscribe [::game/prev-trick])
+        open? (r/atom false)
+        toggle-open (fn [] (swap! open? #(and (not %)
+                                              (some? @prev-trick))))]
+    (fn [_]
+      [:<>
+       [mui/button
+        {:disabled (nil? @prev-trick)
+         :on-click toggle-open}
+        "Letzter Stich"]
+       [mui/backdrop
+        {:open @open?
+         :style {:z-index 100} ; TODO - calculate from theme
+         :on-click toggle-open}
+        (when @open?
+          [:div
+           [trick {:trick @prev-trick}]])]])))
 
 (defn player-tricks-detail []
   (let [tricks (rf/subscribe [::game/tricks])]
@@ -275,7 +295,8 @@
       "Schafkopf"]
      [mui/typography "Raumcode: " [:strong @join-code]]
      [mui/typography "Spiel: " @number]
-     [mui/typography "Runde: " @round]]))
+     [mui/typography "Runde: " @round]
+     [prev-trick-button]]))
 
 (def game-screen
   (with-styles
@@ -299,11 +320,10 @@
          [game-info]]
         [mui/grid
          {:item true
-          :xs 4}
+          :xs 2}
          [across]]
         [mui/grid
-         {:item true
-          :xs 2}
+         {:item true}
          [mui/button
           {:disabled (not @(rf/subscribe [::game/can-undo?]))
            :on-click #(rf/dispatch [::game/undo])}
@@ -338,9 +358,6 @@
           :xs 2}
          [self]]
         [mui/grid
-         {:item true}
-         [hand]]
-        [mui/grid
          {:item true
-          :xs 2}
-         [mui/paper "se"]]]])))
+          :xs 10}
+         [hand]]]])))

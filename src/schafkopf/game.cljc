@@ -222,6 +222,7 @@
                           :game/dealer-seat
                           :game/active-seat
                           :game/active-trick
+                          :game/prev-trick
                           :game/pot])
 
        ;; TODO: Swap our entry in the peers vector with :player/self,

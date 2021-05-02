@@ -124,6 +124,12 @@
  (fn [game _]
    (:game/active-trick game)))
 
+(rf/reg-sub
+ ::prev-trick
+ :<- [::game]
+ (fn [game _]
+   (:game/prev-trick game)))
+
 ;;;; Player subscriptions
 
 (rf/reg-sub
