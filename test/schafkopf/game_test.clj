@@ -108,7 +108,11 @@
 
     (expect :schafkopf/game game)
     (is (every? (comp some? :player/points) players))
-    (is (= 120 (reduce + (map :player/points players))))))
+    (is (= 120 (reduce + (map :player/points players))))
+
+    (is (not (contains? game :game/active-seat)))
+    (is (not (contains? game :game/active-trick)))
+    (is (not (contains? game :game/prev-trick)))))
 
 (deftest test-valid-score
   (are [scores expected] (= expected (g/valid-score? (apply make-score scores)))
@@ -116,28 +120,33 @@
     [-1 -2 -3 -4 -5] false
     [10 10 -10 -10 0] true
     [-10 -10 -10 -10 40] true
-    [0 0 0 0 0] false))
+    [0 0 0 0 0] true))
 
 (deftest test-score
   (let [game (-> (prepare-game) (play-game) (g/summarize))]
-    
+
     (expect :schafkopf/game (g/score game (make-score 10 -10 10 -10 0)))
 
     (testing "rejects invalid scores"
       (is (thrown? AssertionError (g/score game (make-score 10 10 10 10 0))))
-      (is (thrown? AssertionError (g/score game (make-score 10 -10 10 -10 10))))
+      (is (thrown? AssertionError (g/score game (make-score 10 -10 10 -10 10)))))
 
-      (testing "rejects negative pot balance"
-        (is (thrown? AssertionError (g/score game (make-score 10 10 10 10 -40)))))
+    (testing "rejects negative pot balance"
+      (is (thrown? AssertionError (g/score game (make-score 10 10 10 10 -40)))))
 
-      (testing "associates scores correctly"
-        (let [game (g/score game (make-score 10 10 -10 -10 0))]
-          (is (= [10 10 -10 -10] (mapv :player/score (:game/players game))))
-          (is (zero? (:game/pot-score game)))))
+    (testing "associates scores correctly"
+      (let [game (g/score game (make-score 10 10 -10 -10 0))]
+        (is (= [10 10 -10 -10] (mapv :player/score (:game/players game))))
+        (is (zero? (:game/pot-score game))))
 
       (let [game (g/score game (make-score -10 -10 -10 -10 40))]
         (is (= [-10 -10 -10 -10] (mapv :player/score (:game/players game))))
         (is (= 40 (:game/pot-score game)))))
+    
+    (testing "allows zero scores"
+      (let [game (g/score game (make-score 0 0 0 0 0))]
+        (is (= [0 0 0 0] (mapv :player/score (:game/players game))))
+        (is (= 0 (:game/pot-score game)))))
 
     (testing "adds scores to balances"
       (let [game1 (g/score game (make-score -50 -50 50 50 0))
@@ -161,7 +170,7 @@
     (let [game (g/score game (make-score 10 -10 10 -10 0))
           next-game (g/start-next game)]
 
-      (expect :schafkopf/game game)
+      (expect :schafkopf/game next-game)
 
       (is (= 1 (:game/number next-game)))
       (is (= 1 (:game/dealer-seat next-game)))
@@ -175,3 +184,24 @@
         (is (= [] (:player/tricks player)))
         (is (not (contains? player :player/points)))
         (is (not (contains? player :player/score)))))))
+
+(deftest test-skip
+  (doseq [game
+          [(-> (prepare-game) (g/skip))
+           (-> (prepare-game) (play-trick) (g/skip))]]
+
+    (expect :schafkopf/game game)
+
+    (let [players (:game/players game)]
+      (is (every? (comp #(= 0 %) :player/points) players))
+      (is (every? (comp empty? :player/hand) players))
+      (is (every? (comp empty? :player/tricks) players)))
+
+    (is (not (contains? game :game/active-seat)))
+    (is (not (contains? game :game/active-trick)))
+    (is (not (contains? game :game/prev-trick)))
+
+    (testing "Score the skipped game"
+      (let [game (g/score game (make-score -10 -10 -10 -10 40))]
+        (expect :schafkopf/game game)
+        (is (= 40 (:game/pot game)))))))

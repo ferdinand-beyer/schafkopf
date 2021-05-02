@@ -130,6 +130,11 @@
 (defn all-taken? [game]
   (= 8 (tricks-taken game)))
 
+(defn points-counted? [game]
+  (->> (players game)
+       (some :player/points)
+       boolean))
+
 (defn scored? [game]
   (->> (players game)
        (some :player/score)
@@ -160,14 +165,13 @@
 
 (defn valid-score?
   ([{:game.score/keys [players pot]}]
-   (and (zero? (reduce + pot players))
-        (not (every? zero? (conj players pot)))))
+   (zero? (reduce + pot players)))
   ([game {:game.score/keys [pot] :as game-score}]
    (and (valid-score? game-score)
         (not (neg? (+ (:game/pot game) pot))))))
 
 (defn can-score? [game]
-  (and (all-taken? game)
+  (and (points-counted? game)
        (not (scored? game))))
 
 ;;;; Initial values
@@ -324,7 +328,6 @@
                :seat :player/seat)
   :ret :schafkopf/game)
 
-;; TODO: When all taken, remove: active seat, active trick, previous trick
 (defn take-trick
   "Updates the game when the given player takes the current trick."
   [game seat]
@@ -348,7 +351,11 @@
   "Once all tricks have been taken, counts all players' points."
   [game]
   {:pre [(all-taken? game)]}
-  (update game :game/players #(mapv update-points %)))
+  (-> game
+      (update :game/players #(mapv update-points %))
+      (dissoc :game/active-seat
+              :game/active-trick
+              :game/prev-trick)))
 
 ;;;; Score
 
@@ -380,8 +387,25 @@
   (-> game
       (update :game/number inc)
       (update :game/dealer-seat next-seat)
-      (dissoc :game/pot-score :game/active-seat :game/prev-trick)
+      (assoc :game/active-trick [])
+      (dissoc :game/pot-score)
       (update :game/players
               (partial mapv #(-> %
                                  (dissoc :player/points :player/score)
                                  (assoc :player/tricks []))))))
+
+;;;; Skip
+
+(defn skip
+  "Skip a game, remove all cards and allow it to be scored."
+  [game]
+  {:pre [(started? game)]}
+  (-> game
+      (dissoc :game/active-seat
+              :game/active-trick
+              :game/prev-trick)
+      (update :game/players
+              (partial mapv #(assoc %
+                                    :player/points 0
+                                    :player/hand #{}
+                                    :player/tricks [])))))
