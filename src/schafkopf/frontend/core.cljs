@@ -1,6 +1,7 @@
 (ns schafkopf.frontend.core
   (:require [reagent.dom]
             [re-frame.core :as rf]
+            [schafkopf.frontend.db :as db]
             [schafkopf.frontend.view :as view]))
 
 (enable-console-print!)
@@ -14,4 +15,5 @@
   (render))
 
 (defn ^:export init! []
+  (rf/dispatch-sync [::db/init])
   (render))

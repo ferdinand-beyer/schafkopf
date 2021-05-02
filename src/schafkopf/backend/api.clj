@@ -5,7 +5,6 @@
             [wrench.core :as config]
             [taoensso.timbre :as log]
 
-            [muuntaja.middleware :refer [wrap-format]]
             [ring.util.response :as resp]
 
             [taoensso.sente :as sente]
@@ -123,7 +122,9 @@
   (assoc (resp/response client-game)
          :session (assoc session :game-id game-id :uid client-id)))
 
-;;;; TODO: Middleware factory to conform body-params with a spec?
+;; XXX: Have a middleware factory to conform body-params with a spec?
+;; Supported by reitit using coercion:
+;; https://cljdoc.org/d/metosin/reitit/0.5.13/doc/coercion/clojure-spec
 
 (defn handle-host
   [{:keys [body-params session]
@@ -161,10 +162,19 @@
             (error-response 409 :join-failed)))
         (invalid-credentials)))))
 
-;; TODO /api/game -- :get the client-game (on page refresh)
+(defn handle-get-game [{:keys [session]}]
+  (let [game (some-> (session :game-id) (sg/find-game-by-id))
+        uid (session :uid)]
+    (if (and (some? game)
+             (some? uid)
+             (sg/client? game uid))
+      (resp/response (sg/client-game @game uid))
+      (resp/status 204))))
+
 ;; TODO /api/leave -- leave the game (need to update session state)
 (def routes
-  [["/api" {:middleware [wrap-format]}
+  [["/api"
+    ["/game" {:get handle-get-game}]
     ["/host" {:post handle-host}]
     ["/join" {:post handle-join}]]
    ["/chsk" {:get chsk-ajax-get-or-ws-handshake

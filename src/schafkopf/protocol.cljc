@@ -14,6 +14,7 @@
 
 (s/def ::error #{:invalid-params
                  :invalid-credentials
+                 :invalid-csrf-token
                  :join-failed})
 
 (s/def ::error-response (s/keys :req-un [::error]))
