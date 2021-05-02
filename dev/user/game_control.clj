@@ -12,7 +12,7 @@
   @(game-atom))
 
 (defn game []
-  (::sg/game (server-game)))
+  (sg/game (server-game)))
 
 (defn client-game [client-id]
   (sg/client-game (server-game) client-id))
@@ -28,7 +28,7 @@
        first))
 
 (defn active-client []
-  (on-seat (get-in (server-game) [::sg/game :game/active-seat])))
+  (-> (server-game) (sg/game) (:game/active-seat) (on-seat)))
 
 (defn active-client-id []
   (::sg/client-id (active-client)))
@@ -103,3 +103,6 @@
              (not (g/all-taken? (game)))
              (play-trick!)
              (take!)))
+
+(defn undo! []
+  (sg/undo! (game-atom) (rand-client-id) (seqno)))
