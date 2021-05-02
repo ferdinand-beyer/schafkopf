@@ -159,17 +159,6 @@
     ;; a smart subscription.
     [peer {:seat @seat}]))
 
-(def -trick
-  (with-styles
-    {}
-    (fn [{:keys [classes children]}]
-      [mui/grid
-       {:container true
-        :direction :row}
-       (for [[i card] (map vector (range) children)]
-         ^{:key i}
-         [mui/grid {:item true} card])])))
-
 ;; TODO: Use "component names" for these, to avoid confusing
 ;; with related data (card' trick')!
 (defn trick [{:keys [trick]}]
@@ -315,8 +304,11 @@
         [mui/grid
          {:item true
           :xs 2}
-         [mui/paper "nw"]]]
-       
+         [mui/button
+          {:disabled (not @(rf/subscribe [::game/can-undo?]))
+           :on-click #(rf/dispatch [::game/undo])}
+          "Rückgängig"]]]
+
        ;; Middle Row
        [mui/grid
         {:item true

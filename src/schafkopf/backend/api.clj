@@ -59,18 +59,18 @@
 
 ;; TODO: Conform ?data of each custom event!
 
-(defmethod -handle-event-message :game/start [{:keys [uid ?data]}]
+(defmethod -handle-event-message :client/start [{:keys [uid ?data]}]
   (when-let [[game-id seqno] ?data]
     (when-let [game (sg/find-game-by-id game-id)]
       (sg/start! game uid seqno))))
 
-(defmethod -handle-event-message :game/skip [{:keys [uid ?data]}]
+(defmethod -handle-event-message :client/skip [{:keys [uid ?data]}]
   (when-let [[game-id seqno] ?data]
     (when-let [game (sg/find-game-by-id game-id)]
       (sg/skip! game uid seqno))))
 
-;; TODO :game/reset
-;; TODO :game/stop
+;; TODO :client/reset
+;; TODO :client/stop
 
 (defmethod -handle-event-message :client/play [{:keys [uid ?data]}]
   (when-let [[game-id seqno card] ?data]
@@ -87,12 +87,15 @@
     (when-let [game (sg/find-game-by-id game-id)]
       (sg/score! game uid seqno score))))
 
-(defmethod -handle-event-message :game/next [{:keys [uid ?data]}]
+(defmethod -handle-event-message :client/next [{:keys [uid ?data]}]
   (when-let [[game-id seqno] ?data]
     (when-let [game (sg/find-game-by-id game-id)]
       (sg/start-next! game uid seqno))))
 
-;; TODO :client/undo
+(defmethod -handle-event-message :client/undo [{:keys [uid ?data]}]
+  (when-let [[game-id seqno] ?data]
+    (when-let [game (sg/find-game-by-id game-id)]
+      (sg/undo! game uid seqno))))
 
 (defn handle-event-message [{:as ev-msg :keys [uid event]}]
   (log/trace "Received event:" event " - uid:" uid)

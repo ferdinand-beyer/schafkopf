@@ -37,8 +37,13 @@
 (defn client? [game-atom client-id]
   (client-exists? @game-atom client-id))
 
+(defn- can-undo? [server-game _client-id]
+  (let [history (::game-history server-game)]
+    (> (count history) 1)))
+
 ;;;; Client game
 
+;; TODO: Tell who the host is
 (defn- populate-peers [client-game clients]
   (reduce
    (fn [g [_ {::keys [seat name]}]]
@@ -55,7 +60,8 @@
      (assoc :client/client-id client-id
             :server/game-id (::game-id server-game)
             :server/join-code (::join-code server-game)
-            :server/seqno (::seqno server-game))
+            :server/seqno (::seqno server-game)
+            :server/undo? (can-undo? server-game client-id))
      (populate-peers (::clients server-game)))))
 
 (defn- broadcast-event!
@@ -70,7 +76,7 @@
   "Watches a game ref and broadcasts changes to all clients."
   [_key _atom old-server-game new-server-game]
   (when (not= old-server-game new-server-game)
-    (broadcast-event! new-server-game [:game/update])))
+    (broadcast-event! new-server-game [:server/update])))
 
 (mount/defstate broadcaster
   :start (add-watch game-atom ::broadcaster broadcaster-watch)
@@ -107,7 +113,7 @@
   "Destroys a game, letting all connected clients know."
   [game-atom]
   (when-let [server-game @game-atom]
-    (broadcast-event! server-game [:game/stop])
+    (broadcast-event! server-game [:server/stop])
     (log/info "Game destroyed:" (::game-id server-game))))
 
 (defn- register-game! [server-game]
@@ -220,7 +226,6 @@
   (let [game (game server-game)]
     (g/trick-complete? game)))
 
-
 (defn take-trick [server-game client-id seqno]
   (let [seat (get-in server-game [::clients client-id ::seat])]
     (if (and (client-ok? server-game client-id seqno)
@@ -274,13 +279,9 @@
     (when (progressed? server-game seqno)
       (log/info "User" client-id "started the next game"))))
 
-(defn can-undo? [server-game]
-  (let [history (::game-history server-game)]
-    (> (count history) 1)))
-
 (defn undo [server-game client-id seqno]
   (if (and (client-ok? server-game client-id seqno)
-           (can-undo? server-game))
+           (can-undo? server-game client-id))
     (-> server-game
         (update ::game-history pop)
         (progress))

@@ -20,12 +20,12 @@
 ;;;; Server event handlers
 
 (rf/reg-event-db
- :game/update
+ :server/update
  (fn [db [_ game]]
    (assoc db ::game game)))
 
 (rf/reg-event-fx
- :game/stop
+ :server/stop
  (fn [db _]
    ;; TODO: Display message to the user before removing the game state!
    {:db (dissoc db ::game)
@@ -42,12 +42,12 @@
 (reg-event-chsk
  ::start
  (fn [_ _]
-   [:game/start]))
+   [:client/start]))
 
 (reg-event-chsk
  ::skip
  (fn [_ _]
-   [:game/skip]))
+   [:client/skip]))
 
 (reg-event-chsk
  ::play
@@ -62,7 +62,12 @@
 (reg-event-chsk
  ::start-next
  (fn [_ _]
-   [:game/next]))
+   [:client/next]))
+
+(reg-event-chsk
+ ::undo
+ (fn [_ _]
+   [:client/undo]))
 
 ;;;; Game subscriptions
 
@@ -275,3 +280,9 @@
  :<- [::game]
  (fn [game]
    (g/scored? game)))
+
+(rf/reg-sub
+ ::can-undo?
+ :<- [::game]
+ (fn [game]
+   (:server/undo? game)))

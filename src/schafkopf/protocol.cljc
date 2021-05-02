@@ -27,19 +27,23 @@
 (s/def :server/game-id string?)
 (s/def :server/join-code ::join-code)
 (s/def :server/seqno int?)
+(s/def :server/undo? boolean?)
 
 (s/def :server/info (s/keys :req [:server/game-id
                                   :server/join-code
-                                  :server/seqno]))
+                                  :server/seqno]
+                            :opt [:server/undo?]))
 
 (s/def :client/client-id string?)
 (s/def :client/name ::name)
+(s/def :client/host? boolean?)
 
 (s/def :client/info (s/keys :req [:client/client-id]))
 
 (s/def :client/peer
   (s/merge :player/peer
-           (s/keys :req [:client/name])))
+           (s/keys :req [:client/name]
+                   :opt [:client/host?])))
 
 (defn present? [peer]
   (or (= :player/self peer)
