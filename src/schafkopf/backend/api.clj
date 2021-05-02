@@ -64,8 +64,13 @@
     (when-let [game (sg/find-game-by-id game-id)]
       (sg/start! game uid seqno))))
 
+(defmethod -handle-event-message :game/skip [{:keys [uid ?data]}]
+  (when-let [[game-id seqno] ?data]
+    (when-let [game (sg/find-game-by-id game-id)]
+      (sg/skip! game uid seqno))))
+
 ;; TODO :game/reset
-;; TODO :game/end
+;; TODO :game/stop
 
 (defmethod -handle-event-message :client/play [{:keys [uid ?data]}]
   (when-let [[game-id seqno card] ?data]
@@ -82,7 +87,7 @@
     (when-let [game (sg/find-game-by-id game-id)]
       (sg/score! game uid seqno score))))
 
-(defmethod -handle-event-message :client/start-next [{:keys [uid ?data]}]
+(defmethod -handle-event-message :game/next [{:keys [uid ?data]}]
   (when-let [[game-id seqno] ?data]
     (when-let [game (sg/find-game-by-id game-id)]
       (sg/start-next! game uid seqno))))

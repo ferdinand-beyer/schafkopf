@@ -211,7 +211,8 @@
 
 (defn active-trick []
   (let [trick' (rf/subscribe [::game/active-trick])
-        can-take? (rf/subscribe [::game/can-take?])]
+        can-take? (rf/subscribe [::game/can-take?])
+        can-skip? (rf/subscribe [::game/can-skip?])]
     [mui/grid
      {:container true
       :direction :column
@@ -228,7 +229,15 @@
          {:variant :contained
           :color :primary
           :on-click #(rf/dispatch [::game/take])}
-         "Stich nehmen"]])]))
+         "Stich nehmen"]])
+     (when @can-skip?
+       [mui/grid
+        {:item true}
+        [mui/button
+         {:variant :contained
+          :color :primary
+          :on-click #(rf/dispatch [::game/skip])}
+         "Zusammenwerfen"]])]))
 
 (defn center []
   (let [started? @(rf/subscribe [::game/started?])

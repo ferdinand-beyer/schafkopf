@@ -167,6 +167,24 @@
     (when (progressed? server-game seqno)
       (log/info "User" client-id "started game" (::join-code server-game)))))
 
+(defn can-skip? [server-game]
+  (let [game (::game server-game)]
+    (and (g/started? game)
+         (not (g/scored? game)))))
+
+(defn skip [server-game client-id seqno]
+  (if (and (client-ok? server-game client-id seqno)
+           (can-skip? server-game))
+    (-> server-game
+        (update ::game g/skip)
+        (progress))
+    (unchanged server-game)))
+
+(defn skip! [game-atom client-id seqno]
+  (let [server-game (swap! game-atom skip client-id seqno)]
+    (when (progressed? server-game seqno)
+      (log/info "User" client-id "skipped this game"))))
+
 (defn can-play? [server-game seat card]
   (let [game (::game server-game)]
     (and (not (g/trick-complete? game))

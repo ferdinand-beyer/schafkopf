@@ -45,6 +45,11 @@
    [:game/start]))
 
 (reg-event-chsk
+ ::skip
+ (fn [_ _]
+   [:game/skip]))
+
+(reg-event-chsk
  ::play
  (fn [_ [_ card]]
    [:client/play [card]]))
@@ -57,7 +62,7 @@
 (reg-event-chsk
  ::start-next
  (fn [_ _]
-   [:client/start-next]))
+   [:game/next]))
 
 ;;;; Game subscriptions
 
@@ -243,6 +248,14 @@
  :<- [::game]
  (fn [game _]
    (p/can-start? game)))
+
+(rf/reg-sub
+ ::can-skip?
+ :<- [::game]
+ (fn [game _]
+   (and (g/started? game)
+        (empty? (:game/active-trick game))
+        (zero? (g/tricks-taken game)))))
 
 (rf/reg-sub
  ::can-play?
