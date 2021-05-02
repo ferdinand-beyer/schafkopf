@@ -34,8 +34,8 @@
  ::submit
  (fn [{:keys [db]} _]
    (let [scores (scores (get-in db [::data :raw-scores]))
-         game-score {:game.score/players (vec (butlast scores))
-                     :game.score/pot (last scores)}
+         game-score {:game.score/players (subvec scores 0 4)
+                     :game.score/pot (peek scores)}
          game (::gdb/game db)]
      (if (g/valid-score? game game-score)
        (let [{:server/keys [game-id seqno]} game]
