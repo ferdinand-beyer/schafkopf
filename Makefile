@@ -10,7 +10,7 @@ find_clj = $(shell find $(1) -type f \( -name '*.clj' -or -name '*.cljc' \))
 find_cljs = $(shell find $(1) -type f -name '*.clj[sc]')
 
 CLJ_SRC := $(call find_clj,src)
-CLJS_SRC := $(call find_clj,src)
+CLJS_SRC := $(call find_cljs,src)
 
 TEST_CLJ_SRC := $(call find_clj,test)
 TEST_CLJS_SRC := $(call find_cljs,test)

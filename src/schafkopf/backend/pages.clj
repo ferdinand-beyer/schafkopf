@@ -7,8 +7,6 @@
    :headers {"Content-Type" "text/html; charset=utf-8"}
    :body body})
 
-;; TODO: Get the user's active game code, if any, and place it in the
-;; page so that they re-join automatically when they reload the page.
 (defn index [{:keys [anti-forgery-token]}]
   (response
    (page/html5
