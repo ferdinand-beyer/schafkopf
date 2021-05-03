@@ -20,6 +20,31 @@
    ::clients {}
    ::game-history [(g/game)]})
 
+(defn- destroy-game!
+  "Destroys a game, letting all connected clients know."
+  [game-atom]
+  (when-let [server-game @game-atom]
+    (reset! game-atom nil)
+    (log/info "Game destroyed:" (::game-id server-game))))
+
+(defn- register-game! [server-game]
+  (destroy-game! game-atom)
+  (reset! game-atom (assoc server-game
+                           ::game-id (generate-id)
+                           ::join-code (generate-join-code)))
+  game-atom)
+
+(defn- create-game! [client-id]
+  (register-game! (assoc empty-server-game ::host client-id)))
+
+(defn- update-game
+  "Updates the current game in server-game and records it as undoable
+   step."
+  [server-game f & args]
+  (let [history (::game-history server-game)
+        game (apply f (peek history) args)]
+    (update server-game ::game-history conj game)))
+
 (defn game [server-game]
   (peek (::game-history server-game)))
 
@@ -64,19 +89,22 @@
             :server/undo? (can-undo? server-game client-id))
      (populate-peers (::clients server-game)))))
 
-(defn- broadcast-event!
-  "Sends an event to all connected clients."
-  [server-game event]
-  {:pre [(vector? event)]}
+(defn- broadcast!
+  "Broadcasts an event to all connected clients."
+  [server-game event-fn]
   (doseq [[client-id {::keys [send-fn]}] (::clients server-game)]
     (when send-fn
-      (send-fn (conj event (client-game server-game client-id))))))
+      (send-fn (event-fn server-game client-id)))))
 
 (defn- broadcaster-watch
   "Watches a game ref and broadcasts changes to all clients."
   [_key _atom old-server-game new-server-game]
   (when (not= old-server-game new-server-game)
-    (broadcast-event! new-server-game [:server/update])))
+    (if (some? new-server-game)
+      (broadcast! new-server-game
+                  (fn [sg client-id]
+                    [:server/update (client-game sg client-id)]))
+      (broadcast! old-server-game (constantly [:server/stop])))))
 
 (mount/defstate broadcaster
   :start (add-watch game-atom ::broadcaster broadcaster-watch)
@@ -108,31 +136,6 @@
                (map (comp ::seat second))
                (set))
           (range 4)))
-
-(defn- destroy-game!
-  "Destroys a game, letting all connected clients know."
-  [game-atom]
-  (when-let [server-game @game-atom]
-    (broadcast-event! server-game [:server/stop])
-    (log/info "Game destroyed:" (::game-id server-game))))
-
-(defn- register-game! [server-game]
-  (destroy-game! game-atom)
-  (reset! game-atom (assoc server-game
-                           ::game-id (generate-id)
-                           ::join-code (generate-join-code)))
-  game-atom)
-
-(defn- create-game! [client-id]
-  (register-game! (assoc empty-server-game ::host client-id)))
-
-(defn- update-game
-  "Updates the current game in server-game and records it as undoable
-   step."
-  [server-game f & args]
-  (let [history (::game-history server-game)
-        game (apply f (peek history) args)]
-    (update server-game ::game-history conj game)))
 
 (defn- join-game [server-game client-id name send-fn]
   (let [seat (first (free-seats server-game))]

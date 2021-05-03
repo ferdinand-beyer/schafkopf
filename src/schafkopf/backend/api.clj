@@ -38,6 +38,9 @@
   (def ch-recv ch-recv)
   (def chsk-send! send-fn))
 
+;; TODO: We can disconnect a client by sending :chsk/close.  We can either
+;; look at the event for a :server/stop or switch to using async channels,
+;; where a closed channel can be interpreted as disconnect request.
 (defn send-game-event! [uid event]
   (log/debug "Sending" (first event) "to user" uid)
   (chsk-send! uid event))
