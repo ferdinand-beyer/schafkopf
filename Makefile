@@ -34,6 +34,10 @@ build: jar
 .PHONY: build-cljs
 build-cljs: $(JS_TARGET)
 
+.PHONY: npm-deps
+npm-deps:
+	clojure -M:cljs:shadow-cljs npm-deps
+
 .PHONY: jar
 jar: $(JAR)
 
