@@ -7,7 +7,7 @@
  ::host
  backend-interceptors
  (fn [{:keys [db]} [_ name password]]
-   {:db (assoc db ::busy :host)
+   {:db (assoc db ::busy true)
     :http-xhrio {:method :post
                  :uri "/api/host"
                  :params {:name name
@@ -19,7 +19,7 @@
  ::join
  backend-interceptors
  (fn [{:keys [db]} [_ name join-code]]
-   {:db (assoc db ::busy :join)
+   {:db (assoc db ::busy true)
     :http-xhrio {:method :post
                  :uri "/api/join"
                  :params {:name name
@@ -30,7 +30,7 @@
 (rf/reg-event-fx
  ::joined
  (fn [{:keys [db]} [_ game]]
-   {:db (dissoc db ::busy ::host-error ::join-error)
+   {:db (dissoc db ::busy ::error)
     :dispatch [::game/init game]}))
 
 (rf/reg-event-db
@@ -39,34 +39,28 @@
    (let [error (get-in result [:response :error])]
      (-> db
          (dissoc ::busy)
-         (assoc ::host-error
+         (assoc ::error
                 (if (= error :invalid-credentials)
                   "Kennwort ist nicht korrekt"
                   "Unbekannter Fehler"))))))
 
 (rf/reg-event-db
  ::join-failed
- (fn [db _]
-   (-> db
-       (dissoc ::busy)
-       (assoc ::join-error "Konnte nicht beitreten"))))
+ (fn [db [_ result]]
+   (let [error (get-in result [:response :error])]
+     (-> db
+         (dissoc ::busy)
+         (assoc ::error
+                (if (= error :invalid-credentials)
+                  "Unbekannter Zugangscode"
+                  "Konnte nicht beitreten"))))))
 
 (rf/reg-sub
- ::host-loading?
+ ::loading?
  (fn [db]
-   (= :host (::busy db))))
+   (boolean (::busy db))))
 
 (rf/reg-sub
- ::join-loading?
+ ::error
  (fn [db]
-   (= :join (::busy db))))
-
-(rf/reg-sub
- ::host-error
- (fn [db]
-   (::host-error db)))
-
-(rf/reg-sub
- ::join-error
- (fn [db]
-   (::join-error db)))
+   (::error db)))
