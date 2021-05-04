@@ -1,73 +1,19 @@
 ;; TODO: Split into multiple namespaces!
 (ns schafkopf.frontend.game.view
-  (:require [reagent.core :as r]
-            [re-frame.core :as rf]
+  (:require
+   [reagent.core :as r]
+   [re-frame.core :as rf]
 
-            ;; TODO require MUI components selectively!
-            [mui-bien.core.all :as mui]
-            [mui-bien.core.styles :refer [with-styles]]
+   ;; TODO require MUI components selectively!
+   [mui-bien.core.all :as mui]
+   [mui-bien.core.styles :refer [with-styles]]
 
-            [schafkopf.frontend.game.core :as game]
-            [schafkopf.frontend.game.score :as score]
+   [schafkopf.frontend.game.core :as game]
+   [schafkopf.frontend.game.score :as score]
 
-            [schafkopf.frontend.game.views.scoring :refer [score-button]]))
+   [schafkopf.frontend.components.playing-card :refer [card-key playing-card]]
 
-(def suit-names {:acorns "Eichel"
-                 :leaves "Gras"
-                 :hearts "Herz"
-                 :bells "Schellen"})
-
-(def rank-names {:unter "Unter"
-                 :ober "Ober"
-                 :king "König"
-                 :deuce "Daus"})
-
-(defn card-key [[rank suit]]
-  (str (name suit) "-" (if (keyword? rank) (name rank) rank)))
-
-(defn card-name [[rank suit]]
-  (str (get suit-names suit) " " (get rank-names rank rank)))
-
-(defn card-url [card]
-  (str "/assets/img/decks/saxonian/" (card-key card) ".jpg"))
-
-;; Separate component since with-styles screws up clojure types,
-;; such as the 'card' prop which is a vector of keywords.
-(def -card
-  (with-styles
-    {:root {:border-radius 12
-            :width 140
-            :height 250
-            :background-size :cover
-            :position :relative}
-     :fill {:width "100%"
-            :height "100%"}}
-   (fn [{:keys [classes name url elevation
-                disabled onClick
-                children]
-         :or {elevation 1
-              disabled true}}]
-     [mui/card
-      {:elevation elevation
-       :classes {:root (:root classes)}
-       :style {:background-image (str "url('" url "')")}}
-      [mui/tooltip
-       {:title name
-        :arrow true}
-       ;; Wrapper since tooltips won't work on disabled buttons.
-       [:div {:class (:fill classes)}
-        [mui/button-base
-         {:class (:fill classes)
-          :focus-ripple true
-          :disabled disabled
-          :on-click onClick}
-         children]]]])))
-
-(defn card [{:keys [card] :as props}]
-  (let [name (card-name card)
-        url (card-url card)]
-    [-card (merge props {:name name
-                         :url url})]))
+   [schafkopf.frontend.game.views.scoring :refer [score-button]]))
 
 (def hand
   (with-styles
@@ -81,11 +27,13 @@
           [:div
            {:class (:root classes)}
            (doall
-            (for [card' @hand]
-              ^{:key (card-key card')}
-              [card {:card card'
-                     :disabled (not @can-play?)
-                     :on-click #(rf/dispatch [::game/play card'])}]))])))))
+            (for [card @hand]
+              ^{:key (card-key card)}
+              [playing-card
+               {:card card
+                :button true
+                :disabled (not @can-play?)
+                :on-click #(rf/dispatch [::game/play card])}]))])))))
 
 ;; TODO: Avatar
 (defn peer [{:keys [classes seat]}]
@@ -121,25 +69,26 @@
          [mui/typography "(Unbesetzt)"])])))
 
 ;; TODO just for demo :)
-(defn card-deco []
-  [mui/grid
-   {:container true}
-   [mui/grid
-    {:item true
-     :style {:transform "translate(20px, -10px) rotate(-7deg)"
-             :z-index 0}}
-    [card {:card [:bells :deuce]}]]
-   [mui/grid
-    {:item true
-     :style {:transform "translate(0px, -20px)"
-             :z-index 10}}
-    [card {:card [:acorns :ober]
-           :elevation 5}]]
-   [mui/grid
-    {:item true
-     :style {:transform "translate(-20px, -10px) rotate(7deg)"
-             :z-index 3}}
-    [card {:card [:acorns 7]}]]])
+(comment
+  (defn card-deco []
+    [mui/grid
+     {:container true}
+     [mui/grid
+      {:item true
+       :style {:transform "translate(20px, -10px) rotate(-7deg)"
+               :z-index 0}}
+      [playing-card {:card [:bells :deuce]}]]
+     [mui/grid
+      {:item true
+       :style {:transform "translate(0px, -20px)"
+               :z-index 10}}
+      [playing-card {:card [:acorns :ober]
+                     :elevation 5}]]
+     [mui/grid
+      {:item true
+       :style {:transform "translate(-20px, -10px) rotate(7deg)"
+               :z-index 3}}
+      [playing-card {:card [:acorns 7]}]]]))
 
 (defn left []
   (let [seat (rf/subscribe [::game/left-seat])]
@@ -167,11 +116,11 @@
    {:container true
     :direction :row
     :spacing 1}
-   (for [card' trick]
-     ^{:key (card-key card')}
+   (for [card trick]
+     ^{:key (card-key card)}
      [mui/grid
       {:item true}
-      [card {:card card'}]])])
+      [playing-card {:card card}]])])
 
 (defn prev-trick-button []
   (let [prev-trick (rf/subscribe [::game/prev-trick])

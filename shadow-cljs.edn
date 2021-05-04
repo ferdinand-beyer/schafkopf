@@ -10,7 +10,7 @@
    :compiler-options {:cross-chunk-method-motion false}
    :modules
    {:base {:entries [cljs.core reagent.core re-frame.core]}
-    :mui {:entries [schafkopf.frontend.view.mui]
+    :mui {:entries [schafkopf.frontend.components.mui-index]
           :depends-on #{:base}}
     :main {:init-fn schafkopf.frontend.core/init!
            :depends-on #{:base :mui}}}}
