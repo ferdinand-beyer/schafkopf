@@ -23,36 +23,35 @@
 (defn card-url [card]
   (str "/assets/img/decks/saxonian/" (card-key card) ".jpg"))
 
-(def use-card-styles
-  (make-styles {:root {:border-radius 12
-                       :width 140
-                       :height 250
-                       :background-size :cover
-                       :position :relative}
-                :fill {:width "100%"
-                       :height "100%"}}))
-
-(defn playing-card*
-  [{:keys [name url elevation
-           button disabled on-click]
-    :or {elevation 1
-         button false}}]
-  (let [classes (use-card-styles)]
-    [card
-     {:elevation elevation
-      :classes {:root (:root classes)}
-      :style {:background-image (str "url('" url "')")}}
-     [tooltip
-      {:title name
-       :arrow true}
+(let [use-styles
+      (make-styles {:root {:border-radius 12
+                           :width 140
+                           :height 250
+                           :background-size :cover
+                           :position :relative}
+                    :fill {:width "100%"
+                           :height "100%"}})]
+  (defn playing-card*
+    [{:keys [name url elevation
+             button disabled on-click]
+      :or {elevation 1
+           button false}}]
+    (let [classes (use-styles)]
+      [card
+       {:elevation elevation
+        :classes {:root (:root classes)}
+        :style {:background-image (str "url('" url "')")}}
+       [tooltip
+        {:title name
+         :arrow true}
        ;; Wrapper since tooltips won't work on disabled buttons.
-      [:div {:class (:fill classes)}
-       (when button
-         [button-base
-          {:class (:fill classes)
-           :focus-ripple true
-           :disabled disabled
-           :on-click on-click}])]]]))
+        [:div {:class (:fill classes)}
+         (when button
+           [button-base
+            {:class (:fill classes)
+             :focus-ripple true
+             :disabled disabled
+             :on-click on-click}])]]])))
 
 (defn playing-card
   [{:keys [card] :as props}]

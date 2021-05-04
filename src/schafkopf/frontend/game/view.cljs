@@ -6,34 +6,23 @@
 
    ;; TODO require MUI components selectively!
    [mui-bien.core.all :as mui]
-   [mui-bien.core.styles :refer [with-styles]]
+   [mui-bien.core.styles :refer [make-styles]]
 
    [schafkopf.frontend.game.core :as game]
    [schafkopf.frontend.game.score :as score]
 
+   [schafkopf.frontend.components.hand :refer [hand]]
    [schafkopf.frontend.components.playing-card :refer [card-key playing-card]]
 
    [schafkopf.frontend.game.views.scoring :refer [score-button]]))
 
-(def hand
-  (with-styles
-    {:root {:display :flex
-            :flex-direction :row
-            :justify-content :center}}
-    (fn [{:keys [classes]}]
-      (let [hand (rf/subscribe [::game/hand])
-            can-play? (rf/subscribe [::game/can-play?])]
-        (fn [_]
-          [:div
-           {:class (:root classes)}
-           (doall
-            (for [card @hand]
-              ^{:key (card-key card)}
-              [playing-card
-               {:card card
-                :button true
-                :disabled (not @can-play?)
-                :on-click #(rf/dispatch [::game/play card])}]))])))))
+(defn player-hand [_]
+  (let [cards (rf/subscribe [::game/hand])
+        can-play? (rf/subscribe [::game/can-play?])]
+    (fn [_]
+      [hand {:cards @cards
+             :disabled? (not @can-play?)
+             :on-play #(rf/dispatch [::game/play %])}])))
 
 ;; TODO: Avatar
 (defn peer [{:keys [classes seat]}]
@@ -247,17 +236,15 @@
      [mui/typography "Runde: " @round]
      [prev-trick-button]]))
 
-(def game-screen
-  (with-styles
-    {:root {:min-height "100vh"}}
-
-    (fn [{:keys [classes]}]
+(let [use-styles (make-styles {:root {:min-height "100vh"}})]
+  (defn game-screen* []
+    (let [classes (use-styles)]
       [mui/grid
        {:classes classes
         :container true
         :direction :column
         :justify :space-between}
-       
+
        ;; Top Row
        [mui/grid
         {:item true
@@ -295,7 +282,7 @@
          {:item true
           :xs 2}
          [right]]]
-       
+
        ;; Bottom Row
        [mui/grid
         {:item true
@@ -309,4 +296,7 @@
         [mui/grid
          {:item true
           :xs 10}
-         [hand]]]])))
+         [player-hand]]]])))
+
+(defn game-screen [_]
+  [:f> game-screen*])
