@@ -6,6 +6,11 @@
 
 (enable-console-print!)
 
+(def banner "🅢🅒🅗🅐🅕🅚🅞🅟🅕")
+
+(defn print-banner []
+  (.info js/console (str "%c" banner) "font-size:18pt; color:#115293;"))
+
 (defn render []
   (reagent.dom/render [view/root]
                       (.getElementById js/document "app")))
@@ -15,5 +20,6 @@
   (render))
 
 (defn ^:export init! []
+  (print-banner)
   (rf/dispatch-sync [::db/init])
   (render))
