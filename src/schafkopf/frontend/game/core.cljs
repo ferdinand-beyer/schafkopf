@@ -302,6 +302,12 @@
    (:player/score peer)))
 
 (rf/reg-sub
+ ::peer-tricks
+ subscribe-peer
+ (fn [peer _]
+   (:player/tricks peer)))
+
+(rf/reg-sub
  ::peer-tricks-visible?
  subscribe-peer
  (fn [peer _]

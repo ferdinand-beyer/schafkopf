@@ -3,7 +3,6 @@
             [re-frame.core :as rf]
 
             [mui-bien.core.avatar :refer [avatar]]
-            [mui-bien.core.button :refer [button]]
             [mui-bien.core.card :refer [card]]
             [mui-bien.core.card-header :refer [card-header]]
             [mui-bien.core.card-actions :refer [card-actions]]
@@ -11,6 +10,8 @@
 
             [schafkopf.frontend.components.player-badge :refer [player-badge]]
             [schafkopf.frontend.components.stat :refer [stat]]
+
+            [schafkopf.frontend.game.views.player-tricks :refer [show-tricks-button]]
 
             [schafkopf.frontend.game.core :as g]))
 
@@ -70,8 +71,10 @@
 
      (when @tricks-visible?
        [card-actions
-        [button
-         {:size :small} "Stiche anzeigen"]])]))
+        [show-tricks-button
+         {:seat seat
+          :size :small}
+         "Stiche anzeigen"]])]))
 
 (defn peer-info* [{:keys [seat] :as props}]
   (with-let [present? (rf/subscribe [::g/peer-present? seat])]

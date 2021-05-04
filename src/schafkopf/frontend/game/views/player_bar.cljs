@@ -10,12 +10,15 @@
             [schafkopf.frontend.components.player-badge :refer [player-badge]]
             [schafkopf.frontend.components.stat :refer [stat]]
 
+            [schafkopf.frontend.game.views.player-tricks :refer [show-tricks-button]]
+            [schafkopf.frontend.game.views.prev-trick :refer [show-prev-trick-button]]
+
             [schafkopf.frontend.game.core :as g]))
 
 (def use-styles
   (make-styles
    (fn [{:keys [palette spacing]}]
-     {:active {:border "1px solid"
+     {:active {:border-top "1px solid"
                :border-color (get-in palette [:secondary :main])}
       :badge {:margin-right (spacing 4)}
       :stat {:margin-right (spacing 2)}
@@ -51,8 +54,11 @@
              can-see-tricks? (rf/subscribe [::g/can-see-tricks?])
              button-props {:color :inherit}]
     [:<>
+     [show-prev-trick-button
+      button-props
+      "Letzter Stich"]
      (when @can-see-tricks?
-       [button
+       [show-tricks-button
         button-props
         "Stiche anzeigen"])
      (when @can-take?
