@@ -7,6 +7,7 @@
    [mui-bien.core.circular-progress :refer [circular-progress]]
    [mui-bien.core.grid :refer [grid]]
    [mui-bien.core.styles :refer [make-styles]]
+   [mui-bien.core.typography :refer [typography]]
 
    [schafkopf.frontend.game.core :as game]
    [schafkopf.frontend.game.score :as score]
@@ -91,9 +92,20 @@
        "Spiel starten"]
 
       :else
-      [:<>
-       [circular-progress]
-       [:p "Warten auf weitere Teilnehmer..."]])))
+      [grid
+       {:container true
+        :direction :column
+        :justify :center
+        :align-items :center
+        :spacing 2}
+       [grid
+        {:item true}
+        [circular-progress]]
+       [grid
+        {:item true}
+        [typography
+         {:color :textSecondary}
+         "Warten auf weitere Teilnehmer..."]]])))
 
 (defn peer-info-area []
   (with-let [left-seat (rf/subscribe [::game/left-seat])
