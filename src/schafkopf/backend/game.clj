@@ -79,10 +79,11 @@
 (defn client-game
   "Returns the view of the game for a client identified by their id."
   [server-game client-id]
-  (when-let [seat (get-in server-game [::clients client-id ::seat])]
+  (when-let [client (get-in server-game [::clients client-id])]
     (->
-     (g/player-game (game server-game) seat)
+     (g/player-game (game server-game) (::seat client))
      (assoc :client/client-id client-id
+            :client/name (::name client)
             :server/game-id (::game-id server-game)
             :server/join-code (::join-code server-game)
             :server/seqno (::seqno server-game)
@@ -187,6 +188,7 @@
     (when (progressed? server-game seqno)
       (log/info "User" client-id "started game" (::join-code server-game)))))
 
+;; TODO: Don't allow skipping without scoring (noop, but we create history)!
 (defn can-skip? [server-game]
   (let [game (game server-game)]
     (and (g/started? game)

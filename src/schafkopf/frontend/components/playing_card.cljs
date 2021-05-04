@@ -23,10 +23,12 @@
 (defn card-url [card]
   (str "/assets/img/decks/saxonian/" (card-key card) ".jpg"))
 
+(def scale 0.8)
+
 (let [use-styles
       (make-styles {:root {:border-radius 12
-                           :width 140
-                           :height 250
+                           :width (* 140 scale)
+                           :height (* 250 scale)
                            :background-size :cover
                            :position :relative}
                     :fill {:width "100%"

@@ -1,7 +1,7 @@
 ;; TODO: Split into multiple namespaces!
 (ns schafkopf.frontend.game.view
   (:require
-   [reagent.core :as r]
+   [reagent.core :as r :refer [with-let]]
    [re-frame.core :as rf]
 
    ;; TODO require MUI components selectively!
@@ -14,6 +14,9 @@
    [schafkopf.frontend.components.hand :refer [hand]]
    [schafkopf.frontend.components.playing-card :refer [card-key playing-card]]
 
+   [schafkopf.frontend.game.views.game-bar :refer [game-bar]]
+   [schafkopf.frontend.game.views.peer-info :refer [peer-info]]
+   [schafkopf.frontend.game.views.player-bar :refer [player-bar]]
    [schafkopf.frontend.game.views.scoring :refer [score-button]]))
 
 (defn player-hand [_]
@@ -23,39 +26,6 @@
       [hand {:cards @cards
              :disabled? (not @can-play?)
              :on-play #(rf/dispatch [::game/play %])}])))
-
-;; TODO: Avatar
-(defn peer [{:keys [classes seat]}]
-  (let [name (rf/subscribe [::game/peer-name seat])
-        dealer? (rf/subscribe [::game/peer-dealer? seat])
-        active? (rf/subscribe [::game/peer-active? seat])
-        balance (rf/subscribe [::game/peer-balance seat])
-        hand-count (rf/subscribe [::game/peer-hand-count seat])
-        trick-count (rf/subscribe [::game/peer-trick-count seat])
-        tricks-visible? (rf/subscribe [::game/peer-tricks-visible? seat])
-        points (rf/subscribe [::game/peer-points seat])
-        score (rf/subscribe [::game/peer-score seat])]
-    (fn [_]
-      [mui/card
-       {:classes {:root (:root classes)}}
-       (if (some? @name)
-         [:<>
-          [mui/typography {:variant :h6} @name]
-          (when @dealer?
-            [mui/typography "Geber"])
-          (when @active?
-            [mui/typography "An der Reihe"])
-          
-          [mui/typography "Saldo: " @balance]
-          [mui/typography "Karten: " @hand-count]
-          [mui/typography "Stiche: " @trick-count]
-          (when @tricks-visible?
-            [mui/button "Stiche ansehen"])
-          (when @points
-            [mui/typography "Punkte: " @points])
-          (when @score
-            [mui/typography "Bewertung: " @score])]
-         [mui/typography "(Unbesetzt)"])])))
 
 ;; TODO just for demo :)
 (comment
@@ -78,25 +48,6 @@
        :style {:transform "translate(-20px, -10px) rotate(7deg)"
                :z-index 3}}
       [playing-card {:card [:acorns 7]}]]]))
-
-(defn left []
-  (let [seat (rf/subscribe [::game/left-seat])]
-    [peer {:seat @seat}]))
-
-(defn right []
-  (let [seat (rf/subscribe [::game/right-seat])]
-    [peer {:seat @seat}]))
-
-(defn across []
-  (let [seat (rf/subscribe [::game/across-seat])]
-    [peer {:seat @seat}]))
-
-(defn self []
-  (let [seat (rf/subscribe [::game/seat])]
-    ;; TODO: This will not work once we have :player/self
-    ;; need to get this info from the game itself, or using
-    ;; a smart subscription.
-    [peer {:seat @seat}]))
 
 ;; TODO: Use "component names" for these, to avoid confusing
 ;; with related data (card' trick')!
@@ -157,9 +108,7 @@
           [player-tricks-detail])]])))
 
 (defn active-trick []
-  (let [trick' (rf/subscribe [::game/active-trick])
-        can-take? (rf/subscribe [::game/can-take?])
-        can-skip? (rf/subscribe [::game/can-skip?])]
+  (let [trick' (rf/subscribe [::game/active-trick])]
     [mui/grid
      {:container true
       :direction :column
@@ -168,23 +117,7 @@
       :spacing 2}
      [mui/grid
       {:item true}
-      [trick {:trick @trick'}]]
-     (when @can-take?
-       [mui/grid
-        {:item true}
-        [mui/button
-         {:variant :contained
-          :color :primary
-          :on-click #(rf/dispatch [::game/take])}
-         "Stich nehmen"]])
-     (when @can-skip?
-       [mui/grid
-        {:item true}
-        [mui/button
-         {:variant :contained
-          :color :primary
-          :on-click #(rf/dispatch [::game/skip])}
-         "Zusammenwerfen"]])]))
+      [trick {:trick @trick'}]]]))
 
 (defn center []
   (let [started? @(rf/subscribe [::game/started?])
@@ -223,18 +156,24 @@
        [mui/circular-progress]
        [:p "Warten auf weitere Teilnehmer..."]])))
 
-(defn game-info []
-  (let [join-code (rf/subscribe [::game/join-code])
-        number (rf/subscribe [::game/number])
-        round (rf/subscribe [::game/round])]
-    [:<>
-     [mui/typography
-      {:variant :h5}
-      "Schafkopf"]
-     [mui/typography "Raumcode: " [:strong @join-code]]
-     [mui/typography "Spiel: " @number]
-     [mui/typography "Runde: " @round]
-     [prev-trick-button]]))
+(defn peer-info-area []
+  (with-let [left-seat (rf/subscribe [::game/left-seat])
+             across-seat (rf/subscribe [::game/across-seat])
+             right-seat (rf/subscribe [::game/right-seat])]
+    [mui/grid
+     {:item true
+      :container true
+      :justify :space-evenly
+      :wrap "nowrap"}
+     [mui/grid
+      {:item true}
+      [peer-info {:seat @left-seat}]]
+     [mui/grid
+      {:item true}
+      [peer-info {:seat @across-seat}]]
+     [mui/grid
+      {:item true}
+      [peer-info {:seat @right-seat}]]]))
 
 (let [use-styles (make-styles {:root {:min-height "100vh"}})]
   (defn game-screen* []
@@ -244,59 +183,30 @@
         :container true
         :direction :column
         :justify :space-between}
+       
+       [mui/grid
+        {:item true}
+        [game-bar]]
+       
+       [peer-info-area]
 
-       ;; Top Row
        [mui/grid
         {:item true
          :container true
-         :justify :space-between}
-        [mui/grid
-         {:item true
-          :xs 2}
-         [game-info]]
-        [mui/grid
-         {:item true
-          :xs 2}
-         [across]]
+         :justify :center
+         :align-items :center
+         :xs true}
         [mui/grid
          {:item true}
-         [mui/button
-          {:disabled (not @(rf/subscribe [::game/can-undo?]))
-           :on-click #(rf/dispatch [::game/undo])}
-          "Rückgängig"]]]
+         [center]]]
 
-       ;; Middle Row
        [mui/grid
-        {:item true
-         :container true
-         :justify :space-between
-         :align-items :center}
-        [mui/grid
-         {:item true
-          :xs 2}
-         [left]]
-        [mui/grid
-         {:item true}
-         [center]]
-        [mui/grid
-         {:item true
-          :xs 2}
-         [right]]]
+        {:item true}
+        [player-hand]]
 
-       ;; Bottom Row
        [mui/grid
-        {:item true
-         :container true
-         :justify :space-between
-         :align-items :flex-end}
-        [mui/grid
-         {:item true
-          :xs 2}
-         [self]]
-        [mui/grid
-         {:item true
-          :xs 10}
-         [player-hand]]]])))
+        {:item true}
+        [player-bar]]])))
 
 (defn game-screen [_]
   [:f> game-screen*])

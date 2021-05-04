@@ -86,7 +86,6 @@
           [form-control-label
            {:control [switch
                       {:size :small
-                       :color :default
                        :checked @host?
                        :disabled @loading?
                        :on-change #(swap! host? not)}]
@@ -110,8 +109,7 @@
                  :backgroundColor
                  (emphasize (get-in palette [:background :paper]))}
           :paper {:width "20rem"
-                  :padding (spacing 2)}
-          :headline {:margin-bottom (spacing 3)}}))]
+                  :padding (spacing 2)}}))]
   
   (defn screen-layout [_]
     (let [classes (use-styles)]
@@ -125,8 +123,9 @@
          {:item true}
          [paper
           {:classes {:root (:paper classes)}}
-          [typography {:variant :h5
-                       :class (:headline classes)}
+          [typography
+           {:variant :h5
+            :gutter-bottom true}
            "Schafkopf"]
           [join-form]]]]])))
 

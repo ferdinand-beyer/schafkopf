@@ -130,6 +130,18 @@
  (fn [game _]
    (:game/prev-trick game)))
 
+(rf/reg-sub
+ ::pot
+ :<- [::game]
+ (fn [game _]
+   (:game/pot game)))
+
+(rf/reg-sub
+ ::pot-score
+ :<- [::game]
+ (fn [game _]
+   (:game/pot-score game)))
+
 ;;;; Player subscriptions
 
 (rf/reg-sub
@@ -138,12 +150,49 @@
  (fn [game _]
    (:player/seat game)))
 
+(rf/reg-sub
+ ::active?
+ :<- [::seat]
+ :<- [::active-seat]
+ (fn [[seat active-seat] _]
+   (= seat active-seat)))
+
+(rf/reg-sub
+ ::name
+ :<- [::game]
+ (fn [game _]
+   (:client/name game)))
+
+(rf/reg-sub
+ ::balance
+ :<- [::game]
+ (fn [game _]
+   (:player/balance game)))
+
+(rf/reg-sub
+ ::trick-count
+ :<- [::game]
+ (fn [game _]
+   (g/trick-count game)))
+
 ;; TODO: Sorting :)
 (rf/reg-sub
  ::hand
  :<- [::game]
  (fn [game _]
    (:player/hand game)))
+
+(rf/reg-sub
+ ::points
+ :<- [::game]
+ (fn [game _]
+   (:player/points game)))
+
+(rf/reg-sub
+ ::score
+ :<- [::game]
+ (fn [game _]
+   (:player/score game)))
 
 (rf/reg-sub
  ::can-see-tricks?
@@ -211,6 +260,12 @@
   (rf/subscribe [::peer seat]))
 
 (rf/reg-sub
+ ::peer-present?
+ subscribe-peer
+ (fn [{:client/keys [name]} _]
+   (some? name)))
+
+(rf/reg-sub
  ::peer-name
  subscribe-peer
  (fn [peer _]
@@ -260,12 +315,14 @@
  (fn [game _]
    (p/can-start? game)))
 
+;; TODO: Better logic?
 (rf/reg-sub
  ::can-skip?
  :<- [::game]
  (fn [game _]
    (and (g/started? game)
         (empty? (:game/active-trick game))
+        (nil? (:player/tricks game))
         (zero? (g/tricks-taken game)))))
 
 (rf/reg-sub
