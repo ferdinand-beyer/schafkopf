@@ -33,8 +33,9 @@
 (s/def :player/trick-count (s/and int? #(<= 0 % 8)))
 (s/def :player/hand-count :player/trick-count)
 
-(s/def :game/number nat-int?)
+(s/def :game/number nat-int?) ; Hand number
 (s/def :game/dealer-seat :player/seat)
+(s/def :game/lead-seat :player/seat) ; Who leads to the current trick?
 (s/def :game/active-seat :player/seat)
 
 (s/def :player/points nat-int?)
@@ -358,6 +359,10 @@
               :game/active-trick
               :game/prev-trick)))
 
+;; TODO: Have a predicate _after_ each action
+;; started? dealt? played? taken? summarized? scored?
+;; ready? (after start/next) skipped?
+
 ;;;; Score
 
 (s/fdef score
@@ -400,7 +405,7 @@
 (defn skip
   "Skip a game, remove all cards and allow it to be scored."
   [game]
-  {:pre [(started? game)]}
+  {:pre [(started? game)]} ;; TODO and not summarized
   (-> game
       (dissoc :game/active-seat
               :game/active-trick
