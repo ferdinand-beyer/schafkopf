@@ -15,13 +15,13 @@
                  :deuce "Daus"})
 
 (defn card-key [[rank suit]]
-  (str (name suit) "-" (if (keyword? rank) (name rank) rank)))
+  (str (if (keyword? rank) (name rank) rank) "-" (name suit)))
 
 (defn card-name [[rank suit]]
   (str (get suit-names suit) " " (get rank-names rank rank)))
 
 (defn card-url [card]
-  (str "/assets/img/decks/saxonian/" (card-key card) ".jpg"))
+  (str "/assets/img/decks/fxs/" (card-key card) ".webp"))
 
 (def scale 0.8)
 
@@ -36,7 +36,7 @@
   (defn playing-card*
     [{:keys [name url elevation
              button disabled on-click]
-      :or {elevation 1
+      :or {elevation 2
            button false}}]
     (let [classes (use-styles)]
       [card
