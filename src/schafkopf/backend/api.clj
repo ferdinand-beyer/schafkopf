@@ -12,10 +12,12 @@
             [taoensso.sente.packers.transit :as sente-transit]
 
             [schafkopf.protocol :as protocol]
-            [schafkopf.backend.game :as sg]))
+            [schafkopf.backend.game :as sg])
+  (:import (org.apache.commons.codec.digest DigestUtils)))
 
 ;;;; Config etc.
 
+(config/def ticket-key {:secret true})
 (config/def host-password {:require true :secret true})
 
 (defn active-player? [request]
@@ -182,9 +184,34 @@
       (resp/response (sg/client-game @game uid))
       (resp/status 204))))
 
+(defn- ticket-response [response request]
+  (if (and (some? ticket-key)
+           (= 200 (:status response)))
+    (let [ticket (DigestUtils/sha1Hex (str ticket-key " " (:remote-addr request)))]
+      (if (not= ticket (get-in request [:cookies "ticket" :value]))
+        (assoc-in response [:cookies "ticket"]
+                  {:value ticket
+                   :path "/"
+                   :http-only true
+                   :same-site :strict})
+        response))
+    response))
+
+(defn- wrap-ticket
+  [handler]
+  (fn
+    ([request]
+     (-> (handler request)
+         (ticket-response request)))
+    ([request respond raise]
+     (handler request
+              (fn [response]
+                (respond (ticket-response response request)))
+              raise))))
+
 ;; TODO /api/leave -- leave the game (need to update session state)
 (def routes
-  [["/api"
+  [["/api" {:middleware [wrap-ticket]}
     ["/game" {:get handle-get-game}]
     ["/host" {:post handle-host}]
     ["/join" {:post handle-join}]]

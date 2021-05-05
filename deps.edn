@@ -11,7 +11,8 @@
   metosin/reitit-middleware {:mvn/version "0.5.13"}
   hiccup/hiccup {:mvn/version "1.0.5"}
   com.taoensso/sente {:mvn/version "1.16.2"}
-  com.taoensso/timbre {:mvn/version "5.1.2"}}
+  com.taoensso/timbre {:mvn/version "5.1.2"}
+  commons-codec/commons-codec {:mvn/version "1.15"}}
 
  :aliases
  {:test
