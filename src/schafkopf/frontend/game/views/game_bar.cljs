@@ -63,27 +63,23 @@
           :on-click #(close-dispatch [::g/undo])}
          "Rückgängig"
          ]])
-     ]
-    #_[button
-     {:color :inherit
-      :disabled (not @can-undo?)
-      :on-click #(rf/dispatch [::g/undo])}
-     "Rückgängig"]))
+     ]))
 
 (defn- game-bar* [_]
-  (let [classes (use-styles)]
-    [app-bar
-     {:position :static
-      :color :primary
-      :class (classes :root)}
-     [toolbar
-      {:variant :dense}
-      [typography {:variant :h6}
-       "Schafkopf"]
-      [:div {:class (classes :stretch)}]
-      [game-info {:classes classes}]
-      [:div {:class (classes :stretch)}]
-      [game-actions {:classes classes}]]]))
+  (with-let [active? (rf/subscribe [::g/active?])]
+    (let [classes (use-styles)]
+      [app-bar
+       {:position :static
+        :color (if @active? :secondary :primary)
+        :class (classes :root)}
+       [toolbar
+        {:variant :dense}
+        [typography {:variant :h6}
+         "Schafkopf"]
+        [:div {:class (classes :stretch)}]
+        [game-info {:classes classes}]
+        [:div {:class (classes :stretch)}]
+        [game-actions {:classes classes}]]])))
 
 (defn game-bar [_]
   [:f> game-bar*])

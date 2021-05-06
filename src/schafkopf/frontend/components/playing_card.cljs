@@ -1,8 +1,7 @@
 (ns schafkopf.frontend.components.playing-card
   (:require [mui-bien.core.button-base :refer [button-base]]
             [mui-bien.core.paper :refer [paper]]
-            [mui-bien.core.styles :refer [make-styles]]
-            [mui-bien.core.tooltip :refer [tooltip]]))
+            [mui-bien.core.styles :refer [make-styles]]))
 
 (def suit-names {:acorns "Eichel"
                  :leaves "Gras"
@@ -74,24 +73,20 @@
 (defn playing-card*
   [{:keys [card elevation
            button? disabled? on-click]
-    :or {elevation 1
+    :or {elevation 3
          button? false}}]
   (let [classes (use-styles)
         pic [:f> card-sprite* {:card card, :classes classes}]]
     [paper
      {:elevation elevation
       :classes {:root (:root classes)}}
-     [tooltip
-      {:title (card-name card)
-       :arrow true}
-      (if button?
-        [:div ; tooltips won't work on disabled buttons
-         [button-base
-          {:focus-ripple true
-           :disabled disabled?
-           :on-click on-click}
-          pic]]
-        pic)]]))
+     (if button?
+       [button-base
+        {:focus-ripple true
+         :disabled disabled?
+         :on-click on-click}
+        pic]
+       pic)]))
 
 (defn playing-card
   [props]

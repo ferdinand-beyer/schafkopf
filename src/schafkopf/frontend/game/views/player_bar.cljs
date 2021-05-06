@@ -17,9 +17,8 @@
 
 (def use-styles
   (make-styles
-   (fn [{:keys [palette spacing]}]
-     {:active {:border-top "1px solid"
-               :border-color (get-in palette [:secondary :main])}
+   (fn [{:keys [spacing]}]
+     {:active {}
       :badge {:margin-right (spacing 4)}
       :stat {:margin-right (spacing 2)}
       :stretch {:flex-grow 1}})))
