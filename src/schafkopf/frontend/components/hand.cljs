@@ -16,8 +16,8 @@
           ^{:key (card-key card)}
           [playing-card
            {:card card
-            :button true
-            :disabled disabled?
+            :button? true
+            :disabled? disabled?
             :on-click #(when on-play (on-play card))}]))])))
 
 (defn hand [props]
