@@ -17,7 +17,8 @@
 (def use-styles
   (make-styles
    (fn [{:keys [spacing]}]
-     {:root {:margin-bottom (spacing 2)}
+     {:root {:margin-bottom (spacing 2)
+             :transition "background-color 225ms ease-in-out"}
       :stat {:margin-right (spacing 2)}
       :stretch {:flex-grow 1}})))
 

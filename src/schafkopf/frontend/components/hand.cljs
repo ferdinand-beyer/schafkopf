@@ -8,22 +8,25 @@
 (def angle 5)
 (def radius 800)
 
-(defn slot-transform [i n delta]
-  (let [pos (- i (int (/ n 2)))]
+(def active-dist 24)
+
+(defn slot-transform [i n active?]
+  (let [pos (- i (int (/ n 2)))
+        dist (if active? (+ radius active-dist) radius)]
     (str "translate(0px, " radius "px) "
          "rotate(" (* pos angle) "deg) "
-         "translate(0px, " (- 0 radius delta) "px)")))
+         "translate(0px, " (- dist) "px)")))
 
 (let [use-styles
       (make-styles
        {:root
         (fn [{:keys [i n]}]
           {:z-index (inc i)
-           :transform (slot-transform i n 0)})
+           :transform (slot-transform i n false)})
 
         :enabled
         (fn [{:keys [i n]}]
-          {"&:hover" {:transform (slot-transform i n 20)}})}
+          {"&:hover" {:transform (slot-transform i n true)}})}
        {:name "slot"})]
 
   (defn slot* [{:keys [class card disabled? on-click]
@@ -36,7 +39,7 @@
                   (:enabled classes))]}
        [playing-card
         {:card card
-         :elevation 6
+         :elevation 4
          :button? true
          :disabled? disabled?
          :on-click on-click}]])))
@@ -53,7 +56,7 @@
     :slot {:width 0
            :transform-origin (str (/ width 2.0) "px "
                                   (/ height 2.0) "px")
-           :transition "transform ease-out 250ms"}}
+           :transition "transform 225ms ease-out"}}
    {:name "hand"}))
 
 (defn hand*

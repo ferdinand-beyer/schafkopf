@@ -19,9 +19,10 @@
 (defn card-name [[rank suit]]
   (str (get suit-names suit) " " (get rank-names rank rank)))
 
-(def w 112)
-(def h 200)
-(def border-radius 12)
+(def w 224)
+(def h 400)
+(def border-radius 24)
+(def scale 0.5)
 
 (def sprites-url (str "/assets/img/decks/fxs/sprites-" w "x" h ".webp"))
 
@@ -37,17 +38,21 @@
   (->
    {:root {:max-width w
            :max-height h
-           :width w ; TODO: Allow flex shrinking?
-           :height h
+           :width (* w scale)
+           :height (* h scale)
            :border-radius (str (* (/ border-radius w) 100) "%/"
                                (* (/ border-radius h) 100) "%")
            :overflow :hidden}
-    :face {:width "100%"
-           :height 0
-           :padding-bottom (str (* (/ h w) 100) "%")
-           :background-image (str "url('" sprites-url "')")
-           :background-repeat "no-repeat"
-           :background-size "800%"}}
+    :sprite {:max-width w
+             :max-height h
+             :width (* w scale)
+             :height (* h scale)}
+    :texture {:width "100%"
+              :height 0
+              :padding-bottom (str (* (/ h w) 100) "%")
+              :background-image (str "url('" sprites-url "')")
+              :background-repeat "no-repeat"
+              :background-size "800%"}}
    (into (map-indexed
           (fn [i r]
             [(rank-class r)
@@ -58,35 +63,36 @@
             [s {:background-position-y (str (* i (/ 100 3)) "%")}])
           suits))))
 
-(def use-styles (make-styles styles))
+(def use-styles (make-styles styles {:name "card"}))
 
 (defn card-sprite*
   [{:keys [card classes]}]
   (let [[rank suit] card]
     [:div
-     {:class (:root classes)}
+     {:class (:sprite classes)}
      [:div
-      {:class [(:face classes)
+      {:class [(:texture classes)
                (classes (rank-class rank))
                (classes suit)]}]]))
 
 (defn playing-card*
-  [{:keys [card elevation
+  [{:keys [card class elevation
            button? disabled? on-click]
-    :or {elevation 3
+    :or {elevation 1
          button? false}}]
   (let [classes (use-styles)
-        pic [:f> card-sprite* {:card card, :classes classes}]]
+        sprite [:f> card-sprite* {:card card, :classes classes}]]
     [paper
      {:elevation elevation
+      :class class
       :classes {:root (:root classes)}}
      (if button?
        [button-base
         {:focus-ripple true
          :disabled disabled?
          :on-click on-click}
-        pic]
-       pic)]))
+        sprite]
+       sprite)]))
 
 (defn playing-card
   [props]

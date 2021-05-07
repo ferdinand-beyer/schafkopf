@@ -29,28 +29,6 @@
              :disabled? (not @can-play?)
              :on-play #(rf/dispatch [::game/play %])}])))
 
-;; TODO just for demo :)
-(comment
-  (defn card-deco []
-    [grid
-     {:container true}
-     [grid
-      {:item true
-       :style {:transform "translate(20px, -10px) rotate(-7deg)"
-               :z-index 0}}
-      [playing-card {:card [:bells :deuce]}]]
-     [grid
-      {:item true
-       :style {:transform "translate(0px, -20px)"
-               :z-index 10}}
-      [playing-card {:card [:acorns :ober]
-                     :elevation 5}]]
-     [grid
-      {:item true
-       :style {:transform "translate(-20px, -10px) rotate(7deg)"
-               :z-index 3}}
-      [playing-card {:card [:acorns 7]}]]]))
-
 (defn active-trick []
   (with-let [trick (rf/subscribe [::game/active-trick])]
     [grid
@@ -114,7 +92,7 @@
     [grid
      {:item true
       :container true
-      :justify :space-evenly
+      :justify :space-around
       :wrap "nowrap"}
      [grid
       {:item true}
