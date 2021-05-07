@@ -23,12 +23,11 @@
    [schafkopf.frontend.game.views.scoring :refer [score-button]]))
 
 (defn player-hand [_]
-  (let [cards (rf/subscribe [::prefs/hand])
-        can-play? (rf/subscribe [::game/can-play?])]
-    (fn [_]
-      [hand {:cards @cards
-             :disabled? (not @can-play?)
-             :on-play #(rf/dispatch [::game/play %])}])))
+  (with-let [cards (rf/subscribe [::prefs/hand])
+             can-play? (rf/subscribe [::game/can-play?])]
+    [hand {:cards @cards
+           :disabled? (not @can-play?)
+           :on-play #(rf/dispatch [::game/play %])}]))
 
 (defn active-trick []
   (with-let [trick (rf/subscribe [::game/active-trick])]

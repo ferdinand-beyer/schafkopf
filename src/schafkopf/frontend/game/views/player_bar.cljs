@@ -22,8 +22,8 @@
      {:root {:top :auto
              :bottom 0
              :z-index (inc (:app-bar z-index))
-             :background-color "rgba(255, 255, 255, 65%)"
-             :backdrop-filter "blur(3px)"}
+             :background-color "rgba(255, 255, 255, 75%)"
+             :backdrop-filter "blur(5px)"}
       :active {}
       :badge {:margin-right (spacing 4)}
       :stat {:margin-right (spacing 2)}
