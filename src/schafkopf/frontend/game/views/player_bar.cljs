@@ -1,27 +1,34 @@
 (ns schafkopf.frontend.game.views.player-bar
-  (:require [reagent.core :refer [with-let]]
+  (:require [reagent.core :as r :refer [with-let]]
             [re-frame.core :as rf]
 
             [mui-bien.core.app-bar :refer [app-bar]]
             [mui-bien.core.button :refer [button]]
             [mui-bien.core.styles :refer [make-styles]]
             [mui-bien.core.toolbar :refer [toolbar]]
-            
+
             [schafkopf.frontend.components.player-badge :refer [player-badge]]
             [schafkopf.frontend.components.stat :refer [stat]]
 
             [schafkopf.frontend.game.views.player-tricks :refer [show-tricks-button]]
             [schafkopf.frontend.game.views.prev-trick :refer [show-prev-trick-button]]
+            [schafkopf.frontend.game.views.sort :refer [sort-button]]
 
             [schafkopf.frontend.game.core :as g]))
 
 (def use-styles
   (make-styles
-   (fn [{:keys [spacing]}]
-     {:active {}
+   (fn [{:keys [spacing z-index]}]
+     {:root {:top :auto
+             :bottom 0
+             :z-index (inc (:app-bar z-index))
+             :background-color "rgba(255, 255, 255, 65%)"
+             :backdrop-filter "blur(3px)"}
+      :active {}
       :badge {:margin-right (spacing 4)}
       :stat {:margin-right (spacing 2)}
-      :stretch {:flex-grow 1}})))
+      :stretch {:flex-grow 1}})
+   {:name "playerBar"}))
 
 (defn- player-info [{:keys [classes]}]
   (with-let [name (rf/subscribe [::g/name])
@@ -53,33 +60,37 @@
              can-see-tricks? (rf/subscribe [::g/can-see-tricks?])
              button-props {:color :inherit}]
     [:<>
-     [show-prev-trick-button
-      button-props
-      "Letzter Stich"]
-     (when @can-see-tricks?
-       [show-tricks-button
-        button-props
-        "Stiche anzeigen"])
+     (when @can-skip?
+       [button
+        (assoc button-props
+               :on-click #(rf/dispatch [::g/skip]))
+        "Zusammenwerfen"])
      (when @can-take?
        [button
         (assoc button-props
                :color :primary
                :on-click #(rf/dispatch [::g/take]))
         "Stich nehmen"])
-     (when @can-skip?
-       [button
-        (assoc button-props :on-click #(rf/dispatch [::g/skip]))
-        "Zusammenwerfen"])]))
+     (when @can-see-tricks?
+       [show-tricks-button
+        (assoc button-props :color :primary)
+        "Stiche anzeigen"])
+
+     [sort-button]
+     [show-prev-trick-button
+      button-props
+      "Letzter Stich"]]))
 
 (defn- player-bar*
   []
   (with-let [active? (rf/subscribe [::g/active?])]
     (let [classes (use-styles)]
       [app-bar
-       {:position :static
-        :component :footer
-        :color :inherit
-        :class [(when @active? (classes :active))]}
+       {:component :footer
+        :position :absolute
+        :color :transparent
+        :class [(classes :root)
+                (when @active? (classes :active))]}
        [toolbar
         #_{:variant :dense}
         [player-info {:classes classes}]

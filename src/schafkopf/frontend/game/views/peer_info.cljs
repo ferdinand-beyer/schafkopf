@@ -6,6 +6,7 @@
             [mui-bien.core.card :refer [card]]
             [mui-bien.core.card-header :refer [card-header]]
             [mui-bien.core.card-actions :refer [card-actions]]
+            [mui-bien.core.colors :refer [color]]
             [mui-bien.core.styles :refer [make-styles]]
 
             [schafkopf.frontend.components.player-badge :refer [player-badge]]
@@ -23,10 +24,13 @@
       :container {:display :flex
                   :padding (spacing 2)
                   :align-items :center}
-      :badge {:margin-right (spacing 2)}
+      :badge {:margin-right (spacing 2)
+              :align-self :flex-start}
       :stats {:display :flex
               :flex-direction :column}
-      :stat {}})))
+      :stat {}
+      :profit {:color (color :green :500)}
+      :loss {:color (color :red :500)}})))
 
 (defn absent-card []
   [card
@@ -65,15 +69,16 @@
                 :label "Punkte:"
                 :value @points}])
        (when @score
-         [stat {:class (classes :stat)
-                :label "Gewinn:"
+         [stat {:class [(classes :stat)
+                        (classes (if (neg? @score) :loss :profit))]
                 :value @score}])]]
 
      (when @tricks-visible?
        [card-actions
         [show-tricks-button
          {:seat seat
-          :size :small}
+          :size :small
+          :color :primary}
          "Stiche anzeigen"]])]))
 
 (defn peer-info* [{:keys [seat] :as props}]

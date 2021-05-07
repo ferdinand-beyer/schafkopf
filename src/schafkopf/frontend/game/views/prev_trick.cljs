@@ -6,36 +6,46 @@
             [mui-bien.core.button :refer [button]]
             [mui-bien.core.styles :refer [make-styles]]
 
-            [schafkopf.frontend.components.trick :refer [stacked-trick]]
+            [schafkopf.frontend.components.trick :refer [linear-trick]]
 
             [schafkopf.frontend.game.core :as g]))
+
+(rf/reg-event-db
+ ::toggle-open
+ (fn [db _]
+   (update db ::open? not)))
+
+(rf/reg-sub
+ ::open?
+ (fn [db _]
+   (::open? db)))
 
 (def use-styles
   (make-styles
    (fn [{:keys [z-index]}]
      {:backdrop {:z-index (inc (z-index :drawer))}})))
 
-(defn show-prev-trick-button* [props & children]
+(defn prev-trick-view* []
   (with-let [prev-trick (rf/subscribe [::g/prev-trick])
-             open? (r/atom false)
-             toggle-open (fn []
-                           (swap! open?
-                                  #(and (not %)
-                                        (some? @prev-trick))))]
+             open? (rf/subscribe [::open?])]
     (let [classes (use-styles)]
-      [:<>
-       [button
-        (assoc props
-               :disabled (nil? @prev-trick)
-               :on-click toggle-open)
-        children]
-       [backdrop
-        {:class (classes :backdrop)
-         :open @open?
-         :on-click toggle-open}
-        (when @open?
-          [:div
-           [stacked-trick {:cards @prev-trick}]])]])))
+      [backdrop
+       {:class (classes :backdrop)
+        :open @open?
+        :on-click #(rf/dispatch [::toggle-open])}
+       (when @open?
+         [:div
+          [linear-trick {:cards @prev-trick}]])])))
+
+(defn prev-trick-view []
+  (println "prev-trick-view")
+  [:f> prev-trick-view*])
 
 (defn show-prev-trick-button [props & children]
-  [:f> show-prev-trick-button* props children])
+  (with-let [prev-trick (rf/subscribe [::g/prev-trick])]
+    [:<>
+     [button
+      (assoc props
+             :disabled (nil? @prev-trick)
+             :on-click #(rf/dispatch [::toggle-open]))
+      children]]))

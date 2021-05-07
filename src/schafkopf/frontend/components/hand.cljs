@@ -21,20 +21,23 @@
       (make-styles
        {:root
         (fn [{:keys [i n]}]
-          {:z-index (inc i)
-           :transform (slot-transform i n false)})
+          {:position :absolute
+           :width width
+           :height height
+           :z-index (inc i)
+           :transform (slot-transform i n false)
+           :transition "transform 225ms ease-out"})
 
         :enabled
         (fn [{:keys [i n]}]
           {"&:hover" {:transform (slot-transform i n true)}})}
-       {:name "slot"})]
+       {:name "hand"})]
 
-  (defn slot* [{:keys [class card disabled? on-click]
+  (defn slot* [{:keys [card disabled? on-click]
                 :as props}]
     (let [classes (use-styles props)]
       [:div
-       {:class [class
-                (:root classes)
+       {:class [(:root classes)
                 (when-not disabled?
                   (:enabled classes))]}
        [playing-card
@@ -48,15 +51,13 @@
   (make-styles
    {:root {:min-width width
            :min-height height
-           :padding-top 30
-           ;; Unless/until we lay the player bar on top!
+           :padding "32px 0px"
            :overflow :hidden
            :display :flex
            :justify-content :center}
-    :slot {:width 0
-           :transform-origin (str (/ width 2.0) "px "
-                                  (/ height 2.0) "px")
-           :transition "transform 225ms ease-out"}}
+    :slots {:width width
+            :height height
+            :position :relative}}
    {:name "hand"}))
 
 (defn hand*
@@ -65,16 +66,17 @@
   (let [classes (use-styles)]
     [:div
      {:class (classes :root)}
-     (doall
-      (for [[i card] (map vector (range) cards)]
-        ^{:key (card-key card)}
-        [:f> slot*
-         {:i i
-          :n (count cards)
-          :class (classes :slot)
-          :card card
-          :disabled? disabled?
-          :on-click #(when on-play (on-play card))}]))]))
+     [:div
+      {:class (classes :slots)}
+      (doall
+       (for [[i card] (map vector (range) cards)]
+         ^{:key (card-key card)}
+         [:f> slot*
+          {:i i
+           :n (count cards)
+           :card card
+           :disabled? disabled?
+           :on-click #(when on-play (on-play card))}]))]]))
 
 (defn hand [props]
   [:f> hand* props])

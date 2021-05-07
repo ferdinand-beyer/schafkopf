@@ -10,19 +10,20 @@
    [mui-bien.core.typography :refer [typography]]
 
    [schafkopf.frontend.game.core :as game]
+   [schafkopf.frontend.game.preferences :as prefs]
    [schafkopf.frontend.game.score :as score]
 
    [schafkopf.frontend.components.hand :refer [hand]]
-   [schafkopf.frontend.components.playing-card :refer [playing-card]]
    [schafkopf.frontend.components.trick :refer [stacked-trick]]
 
    [schafkopf.frontend.game.views.game-bar :refer [game-bar]]
    [schafkopf.frontend.game.views.peer-info :refer [peer-info]]
    [schafkopf.frontend.game.views.player-bar :refer [player-bar]]
+   [schafkopf.frontend.game.views.prev-trick :refer [prev-trick-view]]
    [schafkopf.frontend.game.views.scoring :refer [score-button]]))
 
 (defn player-hand [_]
-  (let [cards (rf/subscribe [::game/hand])
+  (let [cards (rf/subscribe [::prefs/hand])
         can-play? (rf/subscribe [::game/can-play?])]
     (fn [_]
       [hand {:cards @cards
@@ -107,35 +108,38 @@
 (let [use-styles (make-styles {:root {:min-height "100vh"}})]
   (defn game-screen* []
     (let [classes (use-styles)]
-      [grid
-       {:classes classes
-        :container true
-        :direction :column
-        :justify :space-between}
-       
+      [:<>
        [grid
-        {:item true}
-        [game-bar]]
-       
-       [peer-info-area]
-
-       [grid
-        {:item true
+        {:classes classes
          :container true
-         :justify :center
-         :align-items :center
-         :xs true}
+         :direction :column
+         :justify :space-between}
+
         [grid
          {:item true}
-         [center]]]
+         [game-bar]]
 
-       [grid
-        {:item true}
-        [player-hand]]
+        [peer-info-area]
 
-       [grid
-        {:item true}
-        [player-bar]]])))
+        [grid
+         {:item true
+          :container true
+          :justify :center
+          :align-items :center
+          :xs true}
+         [grid
+          {:item true}
+          [center]]]
+
+        [grid
+         {:item true}
+         [player-hand]]
+
+        [grid
+         {:item true}
+         [player-bar]]]
+
+       [prev-trick-view]])))
 
 (defn game-screen [_]
   [:f> game-screen*])

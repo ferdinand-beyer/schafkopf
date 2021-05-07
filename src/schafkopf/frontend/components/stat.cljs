@@ -16,7 +16,8 @@
          (assoc :variant :body2
                 :classes (select-keys classes [:root])
                 :no-wrap true))
-     [:span {:class (classes :label)} label]
+     (when label
+       [:span {:class (classes :label)} label])
      [:span {:class (classes :value)} value]]))
 
 (defn stat [props]
