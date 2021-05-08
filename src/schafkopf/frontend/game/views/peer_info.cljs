@@ -8,6 +8,8 @@
             [mui-bien.core.card-actions :refer [card-actions]]
             [mui-bien.core.styles :refer [make-styles]]
 
+            [mui-bien.icons.hourglass-empty :refer [hourglass-empty-icon]]
+
             [schafkopf.frontend.components.player-badge :refer [player-badge]]
             [schafkopf.frontend.components.stat :refer [stat score-stat]]
 
@@ -35,12 +37,13 @@
   [card
    {:class (classes :root)}
    [card-header
-    {:avatar [avatar "?"]
+    {:avatar [avatar [hourglass-empty-icon]]
      :title "Niemand"
      :subheader "Warte auf Spieler..."}]])
 
 (defn- present-card [{:keys [seat classes]}]
   (with-let [name (rf/subscribe [::g/peer-name seat])
+             dealer? (rf/subscribe [::g/peer-dealer? seat])
              active? (rf/subscribe [::g/peer-active? seat])
              balance (rf/subscribe [::g/peer-balance seat])
              hand-count (rf/subscribe [::g/peer-hand-count seat])
@@ -55,7 +58,8 @@
       [player-badge
        {:class (classes :badge)
         :name @name
-        :balance @balance}]
+        :balance @balance
+        :dealer? @dealer?}]
 
       [:div
        {:class (classes :stats)}

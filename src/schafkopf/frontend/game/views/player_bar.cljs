@@ -33,6 +33,7 @@
 (defn- player-info [{:keys [classes]}]
   (with-let [name (rf/subscribe [::g/name])
              balance (rf/subscribe [::g/balance])
+             dealer? (rf/subscribe [::g/dealer?])
              trick-count (rf/subscribe [::g/trick-count])
              points (rf/subscribe [::g/points])
              score (rf/subscribe [::g/score])]
@@ -40,7 +41,8 @@
      [player-badge
       {:class (classes :badge)
        :name @name
-       :balance @balance}]
+       :balance @balance
+       :dealer? @dealer?}]
      [stat
       {:class (classes :stat)
        :label "Stiche:"

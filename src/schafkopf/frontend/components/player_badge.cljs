@@ -1,5 +1,7 @@
 (ns schafkopf.frontend.components.player-badge
   (:require [mui-bien.core.avatar :refer [avatar]]
+            [mui-bien.core.badge :refer [badge]]
+            [mui-bien.core.colors :refer [color]]
             [mui-bien.core.styles :refer [make-styles]]
             [mui-bien.core.typography :refer [typography]]))
 
@@ -12,19 +14,30 @@
    (fn [{:keys [spacing]}]
      {:root {:display :flex
              :flex-wrap :no-wrap}
-      :avatar {:margin-right (spacing 2)}})))
+      :avatar {:margin-right (spacing 2)}
+      :badge {:background-color (color :grey :300)}})))
 
-(defn- player-badge* [{:keys [class name balance]}]
+(defn- player-badge* [{:keys [class name balance dealer?]}]
   (let [classes (use-styles)
         ;; FIXME :)
-        color (avatar-color name)]
+        color (avatar-color name)
+        avatar [avatar
+                (cond-> {}
+                  (some? color)
+                  (assoc-in [:style :background-color] color))
+                (if name (first name) "?")]]
     [:div
      {:class [(classes :root) class]}
-     [avatar
-      (cond-> {:class (classes :avatar)}
-        (some? color)
-        (assoc-in [:style :background-color] color))
-      (if name (first name) "?")]
+     [:div
+      {:class (classes :avatar)}
+      (if dealer?
+        [badge {:classes (select-keys classes [:badge])
+                :overlap :circle
+                :anchor-origin {:vertical :bottom
+                                :horizontal :right}
+                :badge-content "G"}
+         avatar]
+        avatar)]
      [:div
       [typography
        {:variant :body2

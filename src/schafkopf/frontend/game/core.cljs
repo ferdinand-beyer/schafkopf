@@ -172,6 +172,13 @@
    (rem (+ offset lead) 4)))
 
 (rf/reg-sub
+ ::dealer?
+ :<- [::seat]
+ :<- [::dealer-seat]
+ (fn [[seat dealer-seat] _]
+   (= dealer-seat seat)))
+
+(rf/reg-sub
  ::active?
  :<- [::seat]
  :<- [::active-seat]
