@@ -22,20 +22,13 @@
    [schafkopf.frontend.game.views.scoring :refer [score-button]]
    [schafkopf.frontend.game.views.tricks :refer [tricks-backdrop]]))
 
-(defn player-hand [_]
-  (with-let [cards (rf/subscribe [::prefs/hand])
-             can-play? (rf/subscribe [::game/can-play?])]
-    [hand {:cards @cards
-           :disabled? (not @can-play?)
-           :on-play #(rf/dispatch [::game/play %])}]))
-
-(defn active-trick []
+(defn- active-trick []
   (with-let [trick (rf/subscribe [::game/active-trick])
              lead-seat (rf/subscribe [::game/mapped-lead-seat])]
     [stacked-trick {:cards @trick
                     :lead @lead-seat}]))
 
-(defn waiting []
+(defn- waiting []
   [grid
    {:container true
     :direction :column
@@ -51,7 +44,7 @@
      {:color :textSecondary}
      "Warten auf weitere Teilnehmer..."]]])
 
-(defn center []
+(defn- center []
   (let [started? @(rf/subscribe [::game/started?])
         can-start? @(rf/subscribe [::game/can-start?])
         can-score? @(rf/subscribe [::score/can-score?])
@@ -82,7 +75,7 @@
       :else
       [waiting])))
 
-(defn peer-info-area []
+(defn- peer-info-area []
   (with-let [left-seat (rf/subscribe [::game/left-seat])
              across-seat (rf/subscribe [::game/across-seat])
              right-seat (rf/subscribe [::game/right-seat])]
@@ -101,44 +94,53 @@
       {:item true}
       [peer-info {:seat @right-seat}]]]))
 
-(let [use-styles
-      (make-styles {:root {:min-height "100vh"
-                           :overflow :hidden}})]
+(defn- player-hand [{:keys [class]}]
+  (with-let [cards (rf/subscribe [::prefs/hand])
+             can-play? (rf/subscribe [::game/can-play?])]
+    [:div
+     {:class class}
+     [hand {:cards @cards
+            :disabled? (not @can-play?)
+            :on-play #(rf/dispatch [::game/play %])}]]))
 
-  (defn game-screen* []
-    (let [classes (use-styles)]
-      [:<>
+(def use-styles
+  (make-styles {:root {:min-height "100vh"
+                       :overflow :hidden}
+                :hand {:padding-bottom 32}}
+               {:name "game"}))
+
+(defn- game-screen* []
+  (let [classes (use-styles)]
+    [:<>
+     [grid
+      {:classes (select-keys classes [:root])
+       :container true
+       :direction :column
+       :justify :space-between}
+
+      [grid
+       {:item true}
+       [game-bar]]
+
+      [peer-info-area]
+
+      [grid
+       {:item true
+        :container true
+        :justify :center
+        :align-items :center
+        :xs true}
        [grid
-        {:classes classes
-         :container true
-         :direction :column
-         :justify :space-between}
+        {:item true}
+        [center]]]
 
-        [grid
-         {:item true}
-         [game-bar]]
+      [grid
+       {:item true}
+       [player-hand
+        {:class (classes :hand)}]]]
 
-        [peer-info-area]
-
-        [grid
-         {:item true
-          :container true
-          :justify :center
-          :align-items :center
-          :xs true}
-         [grid
-          {:item true}
-          [center]]]
-
-        [grid
-         {:item true}
-         [player-hand]]
-
-        [grid
-         {:item true}
-         [player-bar]]]
-
-       [tricks-backdrop]])))
+     [player-bar]
+     [tricks-backdrop]]))
 
 (defn game-screen [_]
   [:f> game-screen*])

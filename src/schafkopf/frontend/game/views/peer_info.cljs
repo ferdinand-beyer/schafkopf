@@ -18,7 +18,9 @@
 (def use-styles
   (make-styles
    (fn [{:keys [palette spacing]}]
-     {:active {:border "1px solid"
+     {:root {:position :relative
+             :z-index 100}
+      :active {:border "1px solid"
                :border-color (get-in palette [:secondary :main])}
       :container {:display :flex
                   :padding (spacing 2)
@@ -29,14 +31,15 @@
               :flex-direction :column}
       :stat {}})))
 
-(defn absent-card []
+(defn- absent-card [{:keys [classes]}]
   [card
+   {:class (classes :root)}
    [card-header
     {:avatar [avatar "?"]
      :title "Niemand"
      :subheader "Warte auf Spieler..."}]])
 
-(defn present-card [{:keys [seat classes]}]
+(defn- present-card [{:keys [seat classes]}]
   (with-let [name (rf/subscribe [::g/peer-name seat])
              active? (rf/subscribe [::g/peer-active? seat])
              balance (rf/subscribe [::g/peer-balance seat])
@@ -46,7 +49,8 @@
              points (rf/subscribe [::g/peer-points seat])
              score (rf/subscribe [::g/peer-score seat])]
     [card
-     {:class [(when @active? (classes :active))]}
+     {:class [(classes :root)
+              (when @active? (classes :active))]}
      [:div {:class (classes :container)}
       [player-badge
        {:class (classes :badge)
@@ -77,7 +81,7 @@
           :color :primary}
          "Stiche anzeigen"]])]))
 
-(defn peer-info* [{:keys [seat] :as props}]
+(defn- peer-info* [{:keys [seat] :as props}]
   (with-let [present? (rf/subscribe [::g/peer-present? seat])]
     (let [classes (use-styles)
           props (assoc props :classes classes)]
