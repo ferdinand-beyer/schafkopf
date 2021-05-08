@@ -21,11 +21,11 @@
   (let [classes (use-styles)
         ;; FIXME :)
         color (avatar-color name)
-        avatar [avatar
-                (cond-> {}
-                  (some? color)
-                  (assoc-in [:style :background-color] color))
-                (if name (first name) "?")]]
+        avatar ^{:key :avatar} [avatar
+                                (cond-> {}
+                                  (some? color)
+                                  (assoc-in [:style :background-color] color))
+                                (if name (first name) "?")]]
     [:div
      {:class [(classes :root) class]}
      [:div
