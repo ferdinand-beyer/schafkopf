@@ -10,7 +10,41 @@
    :compiler-options {:cross-chunk-method-motion false}
    :modules
    {:base {:entries [cljs.core reagent.core re-frame.core]}
-    :mui {:entries [schafkopf.frontend.components.mui-index]
+    :mui {:entries [mui-bien.core.app-bar
+                    mui-bien.core.avatar
+                    mui-bien.core.backdrop
+                    mui-bien.core.badge
+                    mui-bien.core.button
+                    mui-bien.core.button-base
+                    mui-bien.core.card
+                    mui-bien.core.card-actions
+                    mui-bien.core.card-header
+                    mui-bien.core.circular-progress
+                    mui-bien.core.collapse
+                    mui-bien.core.colors
+                    mui-bien.core.css-baseline
+                    mui-bien.core.dialog
+                    mui-bien.core.dialog-actions
+                    mui-bien.core.dialog-content
+                    mui-bien.core.dialog-title
+                    mui-bien.core.divider
+                    mui-bien.core.form-control-label
+                    mui-bien.core.form-helper-text
+                    mui-bien.core.grid
+                    mui-bien.core.icon-button
+                    mui-bien.core.list-item-icon
+                    mui-bien.core.list-item-text
+                    mui-bien.core.menu
+                    mui-bien.core.menu-item
+                    mui-bien.core.paper
+                    mui-bien.core.styles
+                    mui-bien.core.switch
+                    mui-bien.core.text-field
+                    mui-bien.core.toolbar
+                    mui-bien.core.typography
+                    mui-bien.icons.check
+                    mui-bien.icons.hourglass-empty
+                    mui-bien.icons.more-vert]
           :depends-on #{:base}}
     :main {:init-fn schafkopf.frontend.core/init!
            :depends-on #{:base :mui}}}}
