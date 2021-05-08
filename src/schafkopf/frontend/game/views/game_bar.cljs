@@ -12,6 +12,8 @@
 
             [mui-bien.icons.more-vert :refer [more-vert-icon]]
 
+            [schafkopf.frontend.components.stat :refer [stat]]
+
             [schafkopf.frontend.game.core :as g]))
 
 (def use-styles
@@ -30,19 +32,25 @@
     (let [stat-props {:variant :overline
                       :class (classes :stat)}]
       [:<>
-       [typography
+       [stat
+        {:class (classes :stat)
+         :label "Raumcode:"
+         :value @join-code}]
+       [stat
+        {:class (classes :stat)
+         :label "Spiel:"
+         :value @number}]
+       [stat
+        {:class (classes :stat)
+         :label "Runde:"
+         :value @round}
         stat-props
-        "Raumcode: " @join-code]
-       [typography
-        stat-props
-        "Spiel: " @number]
-       [typography
-        stat-props
-        "Runde: " @round]
+        "Runde: "]
        (when @pot
-         [typography
-          stat-props
-          "Stock: " @pot])])))
+         [stat
+          {:class (classes :stat)
+           :label "Stock:"
+           :value @pot}])])))
 
 (defn- game-actions [_]
   (with-let [can-undo? (rf/subscribe [::g/can-undo?])

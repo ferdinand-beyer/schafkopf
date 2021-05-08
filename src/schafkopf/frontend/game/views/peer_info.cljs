@@ -6,11 +6,10 @@
             [mui-bien.core.card :refer [card]]
             [mui-bien.core.card-header :refer [card-header]]
             [mui-bien.core.card-actions :refer [card-actions]]
-            [mui-bien.core.colors :refer [color]]
             [mui-bien.core.styles :refer [make-styles]]
 
             [schafkopf.frontend.components.player-badge :refer [player-badge]]
-            [schafkopf.frontend.components.stat :refer [stat]]
+            [schafkopf.frontend.components.stat :refer [stat score-stat]]
 
             [schafkopf.frontend.game.views.player-tricks :refer [show-tricks-button]]
 
@@ -28,9 +27,7 @@
               :align-self :flex-start}
       :stats {:display :flex
               :flex-direction :column}
-      :stat {}
-      :profit {:color (color :green :500)}
-      :loss {:color (color :red :500)}})))
+      :stat {}})))
 
 (defn absent-card []
   [card
@@ -69,9 +66,8 @@
                 :label "Punkte:"
                 :value @points}])
        (when @score
-         [stat {:class [(classes :stat)
-                        (classes (if (neg? @score) :loss :profit))]
-                :value @score}])]]
+         [score-stat {:class (classes :stat)
+                      :value @score}])]]
 
      (when @tricks-visible?
        [card-actions

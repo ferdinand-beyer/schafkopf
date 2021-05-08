@@ -8,7 +8,7 @@
             [mui-bien.core.toolbar :refer [toolbar]]
 
             [schafkopf.frontend.components.player-badge :refer [player-badge]]
-            [schafkopf.frontend.components.stat :refer [stat]]
+            [schafkopf.frontend.components.stat :refer [stat score-stat]]
 
             [schafkopf.frontend.game.views.player-tricks :refer [show-tricks-button]]
             [schafkopf.frontend.game.views.prev-trick :refer [show-prev-trick-button]]
@@ -50,9 +50,8 @@
               :label "Punkte:"
               :value @points}])
      (when @score
-       [stat {:class (classes :stat)
-              :label "Gewinn:"
-              :value @score}])]))
+       [score-stat {:class (classes :stat)
+                    :value @score}])]))
 
 (defn- player-action-buttons [_]
   (with-let [can-take? (rf/subscribe [::g/can-take?])
