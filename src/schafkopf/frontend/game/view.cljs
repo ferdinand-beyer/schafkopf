@@ -6,7 +6,7 @@
    [mui-bien.core.button :refer [button]]
    [mui-bien.core.circular-progress :refer [circular-progress]]
    [mui-bien.core.grid :refer [grid]]
-   [mui-bien.core.styles :refer [make-styles]]
+   [mui-bien.core.styles :refer [make-styles lighten]]
    [mui-bien.core.typography :refer [typography]]
 
    [schafkopf.frontend.game.core :as game]
@@ -103,44 +103,59 @@
             :disabled? (not @can-play?)
             :on-play #(rf/dispatch [::game/play %])}]]))
 
+(defn make-gradient [palette key]
+  (str "linear-gradient("
+       (get-in palette [:background :paper])
+       ", "
+       (lighten
+        (get-in palette [key :light])
+        0.75)
+       ")"))
+
 (def use-styles
-  (make-styles {:root {:min-height "100vh"
-                       :overflow :hidden}
-                :hand {:padding-bottom 32}}
-               {:name "game"}))
+  (make-styles
+   (fn [{:keys [palette]}]
+     {:root {:min-height "100vh"
+             :overflow :hidden
+             :background-image (make-gradient palette :primary)}
+      :active {:background-image (make-gradient palette :secondary)}
+      :hand {:padding-bottom 32}})
+   {:name "game"}))
 
 (defn- game-screen* []
-  (let [classes (use-styles)]
-    [:<>
-     [grid
-      {:classes (select-keys classes [:root])
-       :container true
-       :direction :column
-       :justify :space-between}
-
-      [grid
-       {:item true}
-       [game-bar]]
-
-      [peer-info-area]
-
-      [grid
-       {:item true
-        :container true
-        :justify :center
-        :align-items :center
-        :xs true}
+  (with-let [active? (rf/subscribe [::game/active?])]
+    (let [classes (use-styles)]
+      [:<>
        [grid
-        {:item true}
-        [center]]]
+        {:class [(when @active? (classes :active))]
+         :classes (select-keys classes [:root])
+         :container true
+         :direction :column
+         :justify :space-between}
 
-      [grid
-       {:item true}
-       [player-hand
-        {:class (classes :hand)}]]]
+        [grid
+         {:item true}
+         [game-bar]]
 
-     [player-bar]
-     [tricks-backdrop]]))
+        [peer-info-area]
+
+        [grid
+         {:item true
+          :container true
+          :justify :center
+          :align-items :center
+          :xs true}
+         [grid
+          {:item true}
+          [center]]]
+
+        [grid
+         {:item true}
+         [player-hand
+          {:class (classes :hand)}]]]
+
+       [player-bar]
+       [tricks-backdrop]])))
 
 (defn game-screen [_]
   [:f> game-screen*])
