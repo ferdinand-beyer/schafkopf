@@ -10,8 +10,8 @@
             [schafkopf.frontend.components.player-badge :refer [player-badge]]
             [schafkopf.frontend.components.stat :refer [stat score-stat]]
 
-            [schafkopf.frontend.game.views.player-tricks :refer [show-tricks-button]]
-            [schafkopf.frontend.game.views.prev-trick :refer [show-prev-trick-button]]
+            [schafkopf.frontend.game.views.tricks :refer [show-tricks-button
+                                                          show-prev-trick-button]]
             [schafkopf.frontend.game.views.sort :refer [sort-button]]
 
             [schafkopf.frontend.game.core :as g]))
@@ -72,13 +72,11 @@
         "Stich nehmen"])
      (when @can-see-tricks?
        [show-tricks-button
-        (assoc button-props :color :primary)
-        "Stiche anzeigen"])
+        (assoc button-props :color :primary)])
 
      [sort-button]
      [show-prev-trick-button
-      button-props
-      "Letzter Stich"]]))
+      button-props]]))
 
 (defn- player-bar*
   []
@@ -86,12 +84,11 @@
     (let [classes (use-styles)]
       [app-bar
        {:component :footer
-        :position :absolute
+        :position :fixed
         :color :transparent
         :class [(classes :root)
                 (when @active? (classes :active))]}
        [toolbar
-        #_{:variant :dense}
         [player-info {:classes classes}]
         [:div {:class (classes :stretch)}]
         [player-action-buttons {:classes classes}]]])))

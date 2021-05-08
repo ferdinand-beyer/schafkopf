@@ -11,7 +11,7 @@
             [schafkopf.frontend.components.player-badge :refer [player-badge]]
             [schafkopf.frontend.components.stat :refer [stat score-stat]]
 
-            [schafkopf.frontend.game.views.player-tricks :refer [show-tricks-button]]
+            [schafkopf.frontend.game.views.tricks :refer [show-tricks-button]]
 
             [schafkopf.frontend.game.core :as g]))
 

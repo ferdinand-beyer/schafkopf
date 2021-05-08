@@ -24,7 +24,7 @@
           {:position :absolute
            :width width
            :height height
-           :z-index (inc i)
+           :z-index (+ 100 i)
            :transform (slot-transform i n false)
            :transition "transform 225ms ease-out"})
 
@@ -42,7 +42,7 @@
                   (:enabled classes))]}
        [playing-card
         {:card card
-         :elevation 4
+         :elevation 6
          :button? true
          :disabled? disabled?
          :on-click on-click}]])))
@@ -51,8 +51,6 @@
   (make-styles
    {:root {:min-width width
            :min-height height
-           :padding "32px 0px"
-           :overflow :hidden
            :display :flex
            :justify-content :center}
     :slots {:width width

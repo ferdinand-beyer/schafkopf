@@ -19,8 +19,8 @@
    [schafkopf.frontend.game.views.game-bar :refer [game-bar]]
    [schafkopf.frontend.game.views.peer-info :refer [peer-info]]
    [schafkopf.frontend.game.views.player-bar :refer [player-bar]]
-   [schafkopf.frontend.game.views.prev-trick :refer [prev-trick-view]]
-   [schafkopf.frontend.game.views.scoring :refer [score-button]]))
+   [schafkopf.frontend.game.views.scoring :refer [score-button]]
+   [schafkopf.frontend.game.views.tricks :refer [tricks-backdrop]]))
 
 (defn player-hand [_]
   (with-let [cards (rf/subscribe [::prefs/hand])
@@ -34,6 +34,22 @@
              lead-seat (rf/subscribe [::game/mapped-lead-seat])]
     [stacked-trick {:cards @trick
                     :lead @lead-seat}]))
+
+(defn waiting []
+  [grid
+   {:container true
+    :direction :column
+    :justify :center
+    :align-items :center
+    :spacing 2}
+   [grid
+    {:item true}
+    [circular-progress]]
+   [grid
+    {:item true}
+    [typography
+     {:color :textSecondary}
+     "Warten auf weitere Teilnehmer..."]]])
 
 (defn center []
   (let [started? @(rf/subscribe [::game/started?])
@@ -64,20 +80,7 @@
        "Spiel starten"]
 
       :else
-      [grid
-       {:container true
-        :direction :column
-        :justify :center
-        :align-items :center
-        :spacing 2}
-       [grid
-        {:item true}
-        [circular-progress]]
-       [grid
-        {:item true}
-        [typography
-         {:color :textSecondary}
-         "Warten auf weitere Teilnehmer..."]]])))
+      [waiting])))
 
 (defn peer-info-area []
   (with-let [left-seat (rf/subscribe [::game/left-seat])
@@ -98,7 +101,10 @@
       {:item true}
       [peer-info {:seat @right-seat}]]]))
 
-(let [use-styles (make-styles {:root {:min-height "100vh"}})]
+(let [use-styles
+      (make-styles {:root {:min-height "100vh"
+                           :overflow :hidden}})]
+
   (defn game-screen* []
     (let [classes (use-styles)]
       [:<>
@@ -132,7 +138,7 @@
          {:item true}
          [player-bar]]]
 
-       [prev-trick-view]])))
+       [tricks-backdrop]])))
 
 (defn game-screen [_]
   [:f> game-screen*])
