@@ -113,6 +113,12 @@
    (:game/dealer-seat game)))
 
 (rf/reg-sub
+ ::lead-seat
+ :<- [::game]
+ (fn [game _]
+   (:game/lead-seat game)))
+
+(rf/reg-sub
  ::active-seat
  :<- [::game]
  (fn [game _]
@@ -149,6 +155,21 @@
  :<- [::game]
  (fn [game _]
    (:player/seat game)))
+
+;; From our perspective, we are sitting on seat 0.  To map a
+;; seat N into our view, we need to add this offset (mod 4).
+(rf/reg-sub
+ ::seat-offset
+ :<- [::seat]
+ (fn [seat _]
+   (rem (- 4 seat) 4)))
+
+(rf/reg-sub
+ ::mapped-lead-seat
+ :<- [::seat-offset]
+ :<- [::lead-seat]
+ (fn [[offset lead] _]
+   (rem (+ offset lead) 4)))
 
 (rf/reg-sub
  ::active?

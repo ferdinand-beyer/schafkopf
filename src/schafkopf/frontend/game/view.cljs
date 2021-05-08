@@ -30,16 +30,10 @@
            :on-play #(rf/dispatch [::game/play %])}]))
 
 (defn active-trick []
-  (with-let [trick (rf/subscribe [::game/active-trick])]
-    [grid
-     {:container true
-      :direction :column
-      :justify :center
-      :align-items :center
-      :spacing 2}
-     [grid
-      {:item true}
-      [stacked-trick {:cards @trick}]]]))
+  (with-let [trick (rf/subscribe [::game/active-trick])
+             lead-seat (rf/subscribe [::game/mapped-lead-seat])]
+    [stacked-trick {:cards @trick
+                    :lead @lead-seat}]))
 
 (defn center []
   (let [started? @(rf/subscribe [::game/started?])
