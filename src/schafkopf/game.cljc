@@ -221,6 +221,7 @@
       (merge
        (select-keys game [:game/number
                           :game/dealer-seat
+                          :game/lead-seat
                           :game/active-seat
                           :game/active-trick
                           :game/prev-trick
@@ -300,6 +301,7 @@
                        (:game/players game)
                        (partition-packets deck forehand))]
      (assoc game
+            :game/lead-seat forehand
             :game/active-seat forehand
             :game/players players))))
 
@@ -339,6 +341,7 @@
     (-> game
         (assoc :game/active-trick []
                :game/prev-trick trick
+               :game/lead-seat seat
                :game/active-seat seat)
         (update-in [:game/players seat :player/tricks] conj trick))))
 
@@ -355,7 +358,8 @@
   {:pre [(all-taken? game)]}
   (-> game
       (update :game/players #(mapv update-points %))
-      (dissoc :game/active-seat
+      (dissoc :game/lead-seat
+              :game/active-seat
               :game/active-trick
               :game/prev-trick)))
 
@@ -407,7 +411,8 @@
   [game]
   {:pre [(started? game)]} ;; TODO and not summarized
   (-> game
-      (dissoc :game/active-seat
+      (dissoc :game/lead-seat
+              :game/active-seat
               :game/active-trick
               :game/prev-trick)
       (update :game/players

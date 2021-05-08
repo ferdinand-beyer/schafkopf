@@ -50,6 +50,8 @@
     (expect :schafkopf/game game)
     (is (= (inc (:game/dealer-seat game))
            (:game/active-seat game)))
+    (is (= (:game/active-seat game)
+           (:game/lead-seat game)))
     
     (testing "Every player has 8 cards"
       (doseq [player (:game/players game)]
@@ -84,23 +86,23 @@
 
         (expect :schafkopf/game game)
         (is (true? (g/trick-complete? game)))
-        (is (not (contains? game :game/active-seat))))
-      )))
+        (is (not (contains? game :game/active-seat)))
+        (is (= 1 (:game/lead-seat game)))))))
 
 (deftest test-take
   (let [game (-> (prepare-game) (play-trick))
-        seat 2
+        taker 2
         trick (:game/active-trick game)
-        game (g/take-trick game seat)]
+        game (g/take-trick game taker)]
 
     (expect :schafkopf/game game)
     (is (= [] (:game/active-trick game)))
-    (is (= [trick] (get-in game [:game/players seat :player/tricks])))
+    (is (= [trick] (get-in game [:game/players taker :player/tricks])))
     (is (= trick (:game/prev-trick game)))
-    (is (= seat (:game/active-seat game)))
 
     ;; TODO Expect no active seat when the last trick has been taken!
-    ))
+    (is (= taker (:game/lead-seat game)))
+    (is (= taker (:game/active-seat game)))))
 
 (deftest test-summarize
   (let [game (-> (prepare-game) (play-game) (g/summarize))
@@ -110,6 +112,7 @@
     (is (every? (comp some? :player/points) players))
     (is (= 120 (reduce + (map :player/points players))))
 
+    (is (not (contains? game :game/lead-seat)))
     (is (not (contains? game :game/active-seat)))
     (is (not (contains? game :game/active-trick)))
     (is (not (contains? game :game/prev-trick)))))
@@ -176,6 +179,7 @@
       (is (= 1 (:game/dealer-seat next-game)))
       (is (= [] (:game/active-trick next-game)))
       (is (not (contains? next-game :game/pot-score)))
+      (is (not (contains? next-game :game/lead-seat)))
       (is (not (contains? next-game :game/active-seat)))
       (is (not (contains? next-game :game/prev-trick)))
 
@@ -197,6 +201,7 @@
       (is (every? (comp empty? :player/hand) players))
       (is (every? (comp empty? :player/tricks) players)))
 
+    (is (not (contains? game :game/lead-seat)))
     (is (not (contains? game :game/active-seat)))
     (is (not (contains? game :game/active-trick)))
     (is (not (contains? game :game/prev-trick)))
