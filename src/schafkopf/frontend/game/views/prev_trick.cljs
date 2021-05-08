@@ -18,7 +18,7 @@
 (rf/reg-sub
  ::open?
  (fn [db _]
-   (::open? db)))
+   (boolean (::open? db))))
 
 (def use-styles
   (make-styles
@@ -38,7 +38,6 @@
           [linear-trick {:cards @prev-trick}]])])))
 
 (defn prev-trick-view []
-  (println "prev-trick-view")
   [:f> prev-trick-view*])
 
 (defn show-prev-trick-button [props & children]
