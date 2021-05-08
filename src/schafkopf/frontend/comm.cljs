@@ -47,7 +47,7 @@
   [{:keys [?data]}]
   (let [[_ new-state-map] ?data]
     (if (:first-open? new-state-map)
-      (log/info "Channel socket successfully established:" new-state-map)
+      (log/debug "Channel socket successfully established:" new-state-map)
       (log/debug "Channel socket state change:" new-state-map))))
 
 (defmethod -handle-event! :chsk/recv
@@ -84,7 +84,7 @@
 (defn send! [event dispatch-reply]
   (if-let [send-fn (:send-fn @channel-socket)]
     (do
-      (log/info "Sending socket event:" event)
+      (log/debug "Sending socket event:" event)
       (let [reply-fn
             (when dispatch-reply
               (fn [reply]
@@ -99,13 +99,13 @@
 (rf/reg-fx
  :chsk-connect
  (fn [_]
-   (log/info "Connecting channel socket")
+   (log/debug "Connecting channel socket")
    (connect-channel-socket!)))
 
 (rf/reg-fx
  :chsk-disconnect
  (fn [_]
-   (log/info "Disconnecting channel socket")
+   (log/debug "Disconnecting channel socket")
    (replace-channel-socket! nil)))
 
 (rf/reg-fx
