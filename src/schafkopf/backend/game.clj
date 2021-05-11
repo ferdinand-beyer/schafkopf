@@ -1,7 +1,8 @@
 (ns schafkopf.backend.game
   (:require [mount.core :as mount]
             [taoensso.timbre :as log]
-            [schafkopf.game :as g]))
+            [schafkopf.game :as g]
+            [schafkopf.backend.util :refer [bounded-stack]]))
 
 (defn generate-id []
   (.toString (java.util.UUID/randomUUID)))
@@ -18,7 +19,8 @@
 (def empty-server-game
   {::seqno 0
    ::clients {}
-   ::game-history [(g/game)]})
+   ::game (g/game)
+   ::game-history (bounded-stack 10)})
 
 (defn- destroy-game!
   "Destroys a game, letting all connected clients know."
@@ -41,12 +43,13 @@
   "Updates the current game in server-game and records it as undoable
    step."
   [server-game f & args]
-  (let [history (::game-history server-game)
-        game (apply f (peek history) args)]
-    (update server-game ::game-history conj game)))
+  (let [old-game (::game server-game)]
+    (-> server-game
+        (update ::game #(apply f % args))
+        (update ::game-history conj old-game))))
 
 (defn game [server-game]
-  (peek (::game-history server-game)))
+  (::game server-game))
 
 (defn find-game-by-id [game-id]
   (when (= game-id (::game-id @game-atom))
@@ -63,8 +66,7 @@
   (client-exists? @game-atom client-id))
 
 (defn- can-undo? [server-game _client-id]
-  (let [history (::game-history server-game)]
-    (> (count history) 1)))
+  (some? (seq (::game-history server-game))))
 
 ;;;; Client game
 
@@ -287,9 +289,11 @@
 (defn undo [server-game client-id seqno]
   (if (and (client-ok? server-game client-id seqno)
            (can-undo? server-game client-id))
-    (-> server-game
-        (update ::game-history pop)
-        (progress))
+    (let [prev-game (peek (::game-history server-game))]
+      (-> server-game
+          (assoc ::game prev-game)
+          (update ::game-history pop)
+          (progress)))
     (unchanged server-game)))
 
 (defn undo! [game-atom client-id seqno]
