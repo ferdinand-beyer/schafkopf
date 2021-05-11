@@ -1,8 +1,12 @@
 (ns schafkopf.backend.game
   (:require [mount.core :as mount]
+            [wrench.core :as config]
             [taoensso.timbre :as log]
             [schafkopf.game :as g]
             [schafkopf.backend.util :refer [bounded-stack]]))
+
+(config/def max-game-history {:spec int?, :default 10})
+(config/def game-expiry-minutes {:spec int?, :default (* 60 4)})
 
 (defn generate-id []
   (.toString (java.util.UUID/randomUUID)))
@@ -10,17 +14,18 @@
 (defn generate-join-code []
   (format "%04d" (rand-int 10000)))
 
+(defn now [] (java.time.Instant/now))
+
+(defn deadline []
+  (.minus (java.time.Instant/now)
+          game-expiry-minutes
+          java.time.temporal.ChronoUnit/MINUTES))
+
 ;; Currently we only support one running game at a time.  When
 ;; we change that, we propably want to use refs to synchronize
 ;; IDs and join codes.
 (mount/defstate game-atom
   :start (atom nil))
-
-(def empty-server-game
-  {::seqno 0
-   ::clients {}
-   ::game (g/game)
-   ::game-history (bounded-stack 10)})
 
 (defn- destroy-game!
   "Destroys a game, letting all connected clients know."
@@ -37,7 +42,18 @@
   game-atom)
 
 (defn- create-game! [client-id]
-  (register-game! (assoc empty-server-game ::host client-id)))
+  (let [now (now)]
+    (register-game!
+     {::seqno 0
+      ::clients {}
+      ::game (g/game)
+      ::game-history (bounded-stack max-game-history)
+      ::created now
+      ::updated now
+      ::host client-id})))
+
+(defn game [server-game]
+  (::game server-game))
 
 (defn- update-game
   "Updates the current game in server-game and records it as undoable
@@ -48,8 +64,12 @@
         (update ::game #(apply f % args))
         (update ::game-history conj old-game))))
 
-(defn game [server-game]
-  (::game server-game))
+(defn- can-undo? [server-game _client-id]
+  (some? (seq (::game-history server-game))))
+
+(defn- expired? [server-game]
+  (.isBefore (::updated server-game)
+             (deadline)))
 
 (defn find-game-by-id [game-id]
   (when (= game-id (::game-id @game-atom))
@@ -64,9 +84,6 @@
 
 (defn client? [game-atom client-id]
   (client-exists? @game-atom client-id))
-
-(defn- can-undo? [server-game _client-id]
-  (some? (seq (::game-history server-game))))
 
 ;;;; Client game
 
@@ -123,7 +140,9 @@
        (in-sync? server-game seqno)))
 
 (defn- progress [server-game]
-  (update server-game ::seqno inc))
+  (-> server-game
+      (update ::seqno inc)
+      (assoc ::updated (now))))
 
 (defn- progressed? [server-game seqno]
   (= (inc seqno) (::seqno server-game)))
