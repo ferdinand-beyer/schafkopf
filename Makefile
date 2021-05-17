@@ -43,7 +43,7 @@ jar: $(JAR)
 
 .PHONY: repl
 repl:
-	clj -M:dev:test:cljs:repl/cider
+	clojure -M:dev:test:cljs:repl
 
 .PHONY: run
 run: $(JAR)
